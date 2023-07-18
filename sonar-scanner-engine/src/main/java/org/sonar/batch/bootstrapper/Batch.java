@@ -36,170 +36,170 @@ import org.sonar.scanner.bootstrap.GlobalContainer;
  */
 public final class Batch {
 
-  private LoggingConfiguration loggingConfig;
-  private List<Object> components;
-  private Map<String, String> globalProperties = new HashMap<>();
+    private LoggingConfiguration loggingConfig;
+    private List<Object> components;
+    private Map<String, String> globalProperties = new HashMap<>();
 
-  private Batch(Builder builder) {
-    components = new ArrayList<>();
-    components.addAll(builder.components);
-    if (builder.environment != null) {
-      components.add(builder.environment);
-    }
-    if (builder.globalProperties != null) {
-      globalProperties.putAll(builder.globalProperties);
-    }
-    if (builder.isEnableLoggingConfiguration()) {
-      loggingConfig = new LoggingConfiguration(builder.environment).setProperties(globalProperties);
+    private Batch(Builder builder) {
+        components = new ArrayList<>();
+        components.addAll(builder.components);
+        if (builder.environment != null) {
+            components.add(builder.environment);
+        }
+        if (builder.globalProperties != null) {
+            globalProperties.putAll(builder.globalProperties);
+        }
+        if (builder.isEnableLoggingConfiguration()) {
+            loggingConfig = new LoggingConfiguration(builder.environment).setProperties(globalProperties);
 
-      if (builder.logOutput != null) {
-        loggingConfig.setLogOutput(builder.logOutput);
-      }
-    }
-  }
-
-  public LoggingConfiguration getLoggingConfiguration() {
-    return loggingConfig;
-  }
-
-  public synchronized Batch execute() {
-    return doExecute(this.globalProperties, this.components);
-  }
-
-  public synchronized Batch doExecute(Map<String, String> scannerProperties, List<Object> components) {
-    configureLogging();
-    try {
-      GlobalContainer.create(scannerProperties, components).execute();
-    } catch (RuntimeException e) {
-      throw handleException(e);
-    }
-    return this;
-  }
-
-  /**
-   * @since 4.4
-   * @deprecated since 6.6 use {@link #execute()}
-   */
-  @Deprecated
-  public synchronized Batch start() {
-    return this;
-  }
-
-  /**
-   * @since 4.4
-   * @deprecated since 6.6 use {@link #execute()}
-   */
-  @Deprecated
-  public Batch executeTask(Map<String, String> analysisProperties, Object... components) {
-    Map<String, String> mergedProps = new HashMap<>(this.globalProperties);
-    mergedProps.putAll(analysisProperties);
-    List<Object> mergedComponents = new ArrayList<>(this.components);
-    mergedComponents.addAll(Arrays.asList(components));
-    return doExecute(mergedProps, mergedComponents);
-  }
-
-  private RuntimeException handleException(RuntimeException t) {
-    if (loggingConfig.isVerbose()) {
-      return t;
+            if (builder.logOutput != null) {
+                loggingConfig.setLogOutput(builder.logOutput);
+            }
+        }
     }
 
-    Throwable y = t;
-    do {
-      if (y instanceof MessageException) {
-        return (MessageException) y;
-      }
-      y = y.getCause();
-    } while (y != null);
-
-    return t;
-  }
-
-  /**
-   * @since 4.4
-   * @deprecated since 6.6 use {@link #execute()}
-   */
-  @Deprecated
-  public synchronized void stop() {
-  }
-
-  private void configureLogging() {
-    if (loggingConfig != null) {
-      loggingConfig.setProperties(globalProperties);
-      LoggingConfigurator.apply(loggingConfig);
-    }
-  }
-
-  public static Builder builder() {
-    return new Builder();
-  }
-
-  public static final class Builder {
-    private Map<String, String> globalProperties;
-    private EnvironmentInformation environment;
-    private List<Object> components = new ArrayList<>();
-    private boolean enableLoggingConfiguration = true;
-    private LogOutput logOutput;
-
-    private Builder() {
+    public LoggingConfiguration getLoggingConfiguration() {
+        return loggingConfig;
     }
 
-    public Builder setEnvironment(EnvironmentInformation env) {
-      this.environment = env;
-      return this;
+    public synchronized Batch execute() {
+        return doExecute(this.globalProperties, this.components);
     }
 
-    public Builder setComponents(List<Object> l) {
-      this.components = l;
-      return this;
-    }
-
-    public Builder setLogOutput(@Nullable LogOutput logOutput) {
-      this.logOutput = logOutput;
-      return this;
-    }
-
-    public Builder setGlobalProperties(Map<String, String> globalProperties) {
-      this.globalProperties = globalProperties;
-      return this;
+    public synchronized Batch doExecute(Map<String, String> scannerProperties, List<Object> components) {
+        configureLogging();
+        try {
+            GlobalContainer.create(scannerProperties, components).execute();
+        } catch (RuntimeException e) {
+            throw handleException(e);
+        }
+        return this;
     }
 
     /**
-     * @deprecated since 6.6 use {@link #setGlobalProperties(Map)}
+     * @since 4.4
+     * @deprecated since 6.6 use {@link #execute()}
      */
     @Deprecated
-    public Builder setBootstrapProperties(Map<String, String> bootstrapProperties) {
-      this.globalProperties = bootstrapProperties;
-      return this;
-    }
-
-    public Builder addComponents(Object... components) {
-      Collections.addAll(this.components, components);
-      return this;
-    }
-
-    public Builder addComponent(Object component) {
-      this.components.add(component);
-      return this;
-    }
-
-    public boolean isEnableLoggingConfiguration() {
-      return enableLoggingConfiguration;
+    public synchronized Batch start() {
+        return this;
     }
 
     /**
-     * Logback is configured by default. It can be disabled, but n this case the batch bootstrapper must provide its
-     * own implementation of SLF4J.
+     * @since 4.4
+     * @deprecated since 6.6 use {@link #execute()}
      */
-    public Builder setEnableLoggingConfiguration(boolean b) {
-      this.enableLoggingConfiguration = b;
-      return this;
+    @Deprecated
+    public Batch executeTask(Map<String, String> analysisProperties, Object... components) {
+        Map<String, String> mergedProps = new HashMap<>(this.globalProperties);
+        mergedProps.putAll(analysisProperties);
+        List<Object> mergedComponents = new ArrayList<>(this.components);
+        mergedComponents.addAll(Arrays.asList(components));
+        return doExecute(mergedProps, mergedComponents);
     }
 
-    public Batch build() {
-      if (components == null) {
-        throw new IllegalStateException("Batch components are not set");
-      }
-      return new Batch(this);
+    private RuntimeException handleException(RuntimeException t) {
+        if (loggingConfig.isVerbose()) {
+            return t;
+        }
+
+        Throwable y = t;
+        do {
+            if (y instanceof MessageException) {
+                return (MessageException) y;
+            }
+            y = y.getCause();
+        } while (y != null);
+
+        return t;
     }
-  }
+
+    /**
+     * @since 4.4
+     * @deprecated since 6.6 use {@link #execute()}
+     */
+    @Deprecated
+    public synchronized void stop() {
+    }
+
+    private void configureLogging() {
+        if (loggingConfig != null) {
+            loggingConfig.setProperties(globalProperties);
+            LoggingConfigurator.apply(loggingConfig);
+        }
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private Map<String, String> globalProperties;
+        private EnvironmentInformation environment;
+        private List<Object> components = new ArrayList<>();
+        private boolean enableLoggingConfiguration = true;
+        private LogOutput logOutput;
+
+        private Builder() {
+        }
+
+        public Builder setEnvironment(EnvironmentInformation env) {
+            this.environment = env;
+            return this;
+        }
+
+        public Builder setComponents(List<Object> l) {
+            this.components = l;
+            return this;
+        }
+
+        public Builder setLogOutput(@Nullable LogOutput logOutput) {
+            this.logOutput = logOutput;
+            return this;
+        }
+
+        public Builder setGlobalProperties(Map<String, String> globalProperties) {
+            this.globalProperties = globalProperties;
+            return this;
+        }
+
+        /**
+         * @deprecated since 6.6 use {@link #setGlobalProperties(Map)}
+         */
+        @Deprecated
+        public Builder setBootstrapProperties(Map<String, String> bootstrapProperties) {
+            this.globalProperties = bootstrapProperties;
+            return this;
+        }
+
+        public Builder addComponents(Object... components) {
+            Collections.addAll(this.components, components);
+            return this;
+        }
+
+        public Builder addComponent(Object component) {
+            this.components.add(component);
+            return this;
+        }
+
+        public boolean isEnableLoggingConfiguration() {
+            return enableLoggingConfiguration;
+        }
+
+        /**
+         * Logback is configured by default. It can be disabled, but n this case the batch bootstrapper must provide its
+         * own implementation of SLF4J.
+         */
+        public Builder setEnableLoggingConfiguration(boolean b) {
+            this.enableLoggingConfiguration = b;
+            return this;
+        }
+
+        public Batch build() {
+            if (components == null) {
+                throw new IllegalStateException("Batch components are not set");
+            }
+            return new Batch(this);
+        }
+    }
 }

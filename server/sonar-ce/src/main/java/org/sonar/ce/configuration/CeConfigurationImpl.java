@@ -19,10 +19,14 @@
  */
 package org.sonar.ce.configuration;
 
+import java.util.stream.Stream;
+
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonar.api.config.Configuration;
 import org.sonar.api.utils.MessageException;
+import org.sonar.api.utils.log.Logger;
+import org.sonar.api.utils.log.Loggers;
 
 import static java.lang.String.format;
 import static org.sonar.process.ProcessProperties.Property.CE_GRACEFUL_STOP_TIMEOUT;
@@ -31,84 +35,103 @@ import static org.sonar.process.ProcessProperties.Property.CE_GRACEFUL_STOP_TIME
  * Immutable implementation of {@link CeConfiguration} initialized at startup from {@link Configuration}.
  */
 public class CeConfigurationImpl implements CeConfiguration {
-  private static final int DEFAULT_WORKER_THREAD_COUNT = 1;
-  private static final int MAX_WORKER_THREAD_COUNT = 10;
-  private static final int DEFAULT_WORKER_COUNT = 1;
-  // 2 seconds
-  private static final long DEFAULT_QUEUE_POLLING_DELAY = 2 * 1000L;
-  // 0 minute
-  private static final long CANCEL_WORN_OUTS_INITIAL_DELAY = 0;
-  // 2 minutes
-  private static final long CANCEL_WORN_OUTS_DELAY = 2;
 
-  @CheckForNull
-  private final WorkerCountProvider workerCountProvider;
-  private final int workerThreadCount;
-  private final long gracefulStopTimeoutInMs;
-  private int workerCount;
+    private static final Logger LOG = Loggers.get(CeConfigurationImpl.class);
 
-  public CeConfigurationImpl(Configuration configuration) {
-    this(configuration, null);
-  }
+    // private static final int DEFAULT_WORKER_THREAD_COUNT = 1;
+    // private static final int MAX_WORKER_THREAD_COUNT = 10;
+    // private static final int DEFAULT_WORKER_COUNT = 1;
 
-  public CeConfigurationImpl(Configuration configuration, @Nullable WorkerCountProvider workerCountProvider) {
-    this.workerCountProvider = workerCountProvider;
-    this.gracefulStopTimeoutInMs = configuration.getLong(CE_GRACEFUL_STOP_TIMEOUT.getKey())
-      .orElse(Long.parseLong(CE_GRACEFUL_STOP_TIMEOUT.getDefaultValue()));
-    if (workerCountProvider == null) {
-      this.workerCount = DEFAULT_WORKER_COUNT;
-      this.workerThreadCount = DEFAULT_WORKER_THREAD_COUNT;
-    } else {
-      this.workerCount = readWorkerCount(workerCountProvider);
-      this.workerThreadCount = MAX_WORKER_THREAD_COUNT;
+    // debug ???
+    private static final int DEFAULT_WORKER_THREAD_COUNT = 1;
+    private static final int MAX_WORKER_THREAD_COUNT = 10;
+    private static final int DEFAULT_WORKER_COUNT = DEFAULT_WORKER_THREAD_COUNT;
+
+    // 2 seconds
+    private static final long DEFAULT_QUEUE_POLLING_DELAY = 2 * 1000L;
+    // 0 minute
+    private static final long CANCEL_WORN_OUTS_INITIAL_DELAY = 0;
+    // 2 minutes
+    private static final long CANCEL_WORN_OUTS_DELAY = 2;
+
+    @CheckForNull
+    private final WorkerCountProvider workerCountProvider;
+    private final int workerThreadCount;
+    private final long gracefulStopTimeoutInMs;
+    private int workerCount;
+
+    public CeConfigurationImpl(Configuration configuration) {
+        this(configuration, null);
     }
-  }
 
-  private static synchronized int readWorkerCount(WorkerCountProvider workerCountProvider) {
-    int value = workerCountProvider.get();
-    if (value < DEFAULT_WORKER_COUNT || value > MAX_WORKER_THREAD_COUNT) {
-      throw parsingError(value);
+    public CeConfigurationImpl(Configuration configuration, @Nullable WorkerCountProvider workerCountProvider) {
+
+        // ???
+        Stream.of(Thread.currentThread().getStackTrace())
+            .forEach(e -> LOG.info("--- CeConfigurationImpl - {}", e));
+        this.workerCountProvider = workerCountProvider;
+        this.gracefulStopTimeoutInMs = configuration.getLong(CE_GRACEFUL_STOP_TIMEOUT.getKey())
+            .orElse(Long.parseLong(CE_GRACEFUL_STOP_TIMEOUT.getDefaultValue()));
+        if (workerCountProvider == null) {
+            this.workerCount = DEFAULT_WORKER_COUNT;
+            this.workerThreadCount = DEFAULT_WORKER_THREAD_COUNT;
+            LOG.info("--- workerCountProvider == null, workerCount: {}, workerThreadCount: {}",
+                     this.workerCount,
+                     this.workerThreadCount);
+        } else {
+            this.workerCount = readWorkerCount(workerCountProvider);
+            this.workerThreadCount = MAX_WORKER_THREAD_COUNT;
+            LOG.info("--- workerCountProvider != null, workerCount: {}, workerThreadCount: {}",
+                     this.workerCount,
+                     this.workerThreadCount);
+        }
     }
-    return value;
-  }
 
-  private static MessageException parsingError(int value) {
-    return MessageException.of(format(
-      "Worker count '%s' is invalid. It must be an integer strictly greater than 0 and less or equal to 10",
-      value));
-  }
-
-  @Override
-  public int getWorkerMaxCount() {
-    return workerThreadCount;
-  }
-
-  @Override
-  public int getWorkerCount() {
-    if (workerCountProvider != null) {
-      workerCount = readWorkerCount(workerCountProvider);
+    private static synchronized int readWorkerCount(WorkerCountProvider workerCountProvider) {
+        int value = workerCountProvider.get();
+        if (value < DEFAULT_WORKER_COUNT || value > MAX_WORKER_THREAD_COUNT) {
+            throw parsingError(value);
+        }
+        return value;
     }
-    return workerCount;
-  }
 
-  @Override
-  public long getQueuePollingDelay() {
-    return DEFAULT_QUEUE_POLLING_DELAY;
-  }
+    private static MessageException parsingError(int value) {
+        return MessageException.of(format(
+                                       "Worker count '%s' is invalid. It must be an integer strictly greater than 0 and less or equal to 10",
+                                       value));
+    }
 
-  @Override
-  public long getCleanTasksInitialDelay() {
-    return CANCEL_WORN_OUTS_INITIAL_DELAY;
-  }
+    @Override
+    public int getWorkerMaxCount() {
+        return workerThreadCount;
+    }
 
-  @Override
-  public long getCleanTasksDelay() {
-    return CANCEL_WORN_OUTS_DELAY;
-  }
+    @Override
+    public int getWorkerCount() {
+        if (workerCountProvider != null) {
+            workerCount = readWorkerCount(workerCountProvider);
+        }
+        return workerCount;
+    }
 
-  @Override
-  public long getGracefulStopTimeoutInMs() {
-    return gracefulStopTimeoutInMs;
-  }
+    @Override
+    public long getQueuePollingDelay() {
+        return DEFAULT_QUEUE_POLLING_DELAY;
+    }
+
+    @Override
+    public long getCleanTasksInitialDelay() {
+        return CANCEL_WORN_OUTS_INITIAL_DELAY;
+    }
+
+    @Override
+    public long getCleanTasksDelay() {
+        return CANCEL_WORN_OUTS_DELAY;
+    }
+
+    @Override
+    public long getGracefulStopTimeoutInMs() {
+        return gracefulStopTimeoutInMs;
+    }
 
 }

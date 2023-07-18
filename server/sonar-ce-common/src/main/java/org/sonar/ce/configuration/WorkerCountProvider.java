@@ -29,8 +29,8 @@ import org.sonar.api.server.ServerSide;
 @ComputeEngineSide
 @ServerSide
 public interface WorkerCountProvider {
-  /**
-   * @return an integer strictly greater than 0
-   */
-  int get();
+    /**
+     * @return an integer strictly greater than 0
+     */
+    int get();
 }

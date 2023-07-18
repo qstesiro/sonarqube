@@ -25,43 +25,58 @@ import java.util.stream.Stream;
 import org.sonar.ce.queue.InternalCeQueue;
 import org.sonar.core.util.UuidFactory;
 import org.sonar.core.util.stream.MoreCollectors;
+import org.sonar.api.utils.log.Logger;
+import org.sonar.api.utils.log.Loggers;
 
 public class CeWorkerFactoryImpl implements CeWorkerFactory {
-  private final UuidFactory uuidFactory;
-  private final InternalCeQueue queue;
-  private final CeTaskProcessorRepository taskProcessorRepository;
-  private final CeWorkerController ceWorkerController;
-  private final CeWorker.ExecutionListener[] executionListeners;
-  private Set<CeWorker> ceWorkers = Collections.emptySet();
 
-  /**
-   * Used by Pico when there is no {@link CeWorker.ExecutionListener} in the container.
-   */
-  public CeWorkerFactoryImpl(InternalCeQueue queue, CeTaskProcessorRepository taskProcessorRepository,
-    UuidFactory uuidFactory, CeWorkerController ceWorkerController) {
-    this(queue, taskProcessorRepository, uuidFactory, ceWorkerController, new CeWorker.ExecutionListener[0]);
-  }
+    private static final Logger LOG = Loggers.get(CeWorkerFactoryImpl.class);
 
-  public CeWorkerFactoryImpl(InternalCeQueue queue, CeTaskProcessorRepository taskProcessorRepository,
-    UuidFactory uuidFactory, CeWorkerController ceWorkerController,
-    CeWorker.ExecutionListener[] executionListeners) {
-    this.queue = queue;
-    this.taskProcessorRepository = taskProcessorRepository;
-    this.uuidFactory = uuidFactory;
-    this.ceWorkerController = ceWorkerController;
-    this.executionListeners = executionListeners;
-  }
+    private final UuidFactory uuidFactory;
+    private final InternalCeQueue queue;
+    private final CeTaskProcessorRepository taskProcessorRepository;
+    private final CeWorkerController ceWorkerController;
+    private final CeWorker.ExecutionListener[] executionListeners;
+    private Set<CeWorker> ceWorkers = Collections.emptySet();
 
-  @Override
-  public CeWorker create(int ordinal) {
-    String uuid = uuidFactory.create();
-    CeWorkerImpl ceWorker = new CeWorkerImpl(ordinal, uuid, queue, taskProcessorRepository, ceWorkerController, executionListeners);
-    ceWorkers = Stream.concat(ceWorkers.stream(), Stream.of(ceWorker)).collect(MoreCollectors.toSet(ceWorkers.size() + 1));
-    return ceWorker;
-  }
+    /**
+     * Used by Pico when there is no {@link CeWorker.ExecutionListener} in the container.
+     */
+    public CeWorkerFactoryImpl(InternalCeQueue queue, CeTaskProcessorRepository taskProcessorRepository,
+                               UuidFactory uuidFactory, CeWorkerController ceWorkerController) {
+        this(queue, taskProcessorRepository, uuidFactory, ceWorkerController, new CeWorker.ExecutionListener[0]);
+    }
 
-  @Override
-  public Set<CeWorker> getWorkers() {
-    return ceWorkers;
-  }
+    public CeWorkerFactoryImpl(InternalCeQueue queue, CeTaskProcessorRepository taskProcessorRepository,
+                               UuidFactory uuidFactory, CeWorkerController ceWorkerController,
+                               CeWorker.ExecutionListener[] executionListeners) {
+        this.queue = queue;
+        this.taskProcessorRepository = taskProcessorRepository;
+        this.uuidFactory = uuidFactory;
+        this.ceWorkerController = ceWorkerController;
+        this.executionListeners = executionListeners;
+    }
+
+    @Override
+    public CeWorker create(int ordinal) {
+        // ???
+        // Stream.of(Thread.currentThread().getStackTrace())
+        //     .forEach(e -> LOG.info("--- create - {}", e));
+        String uuid = uuidFactory.create();
+        CeWorkerImpl ceWorker = new CeWorkerImpl(ordinal, uuid, queue,
+                                                 taskProcessorRepository,
+                                                 ceWorkerController,
+                                                 executionListeners);
+        ceWorkers = Stream.concat(ceWorkers.stream(),
+                                  Stream.of(ceWorker)).collect(MoreCollectors.toSet(ceWorkers.size() + 1));
+        return ceWorker;
+    }
+
+    @Override
+    public Set<CeWorker> getWorkers() {
+        // ???
+        // Stream.of(Thread.currentThread().getStackTrace())
+        //     .forEach(e -> LOG.info("--- getWorkers - {}", e));
+        return ceWorkers;
+    }
 }

@@ -58,121 +58,121 @@ import org.sonar.scanner.repository.settings.GlobalSettingsLoader;
 import org.sonar.scanner.scan.ProjectScanContainer;
 
 public class GlobalContainer extends ComponentContainer {
-  private static final Logger LOG = Loggers.get(GlobalContainer.class);
-  private final Map<String, String> scannerProperties;
+    private static final Logger LOG = Loggers.get(GlobalContainer.class);
+    private final Map<String, String> scannerProperties;
 
-  private GlobalContainer(Map<String, String> scannerProperties) {
-    super();
-    this.scannerProperties = scannerProperties;
-  }
-
-  public static GlobalContainer create(Map<String, String> scannerProperties, List<?> extensions) {
-    GlobalContainer container = new GlobalContainer(scannerProperties);
-    container.add(extensions);
-    return container;
-  }
-
-  @Override
-  protected void doBeforeStart() {
-    RawScannerProperties rawScannerProperties = new RawScannerProperties(scannerProperties);
-    GlobalAnalysisMode globalMode = new GlobalAnalysisMode(rawScannerProperties);
-    add(rawScannerProperties);
-    add(globalMode);
-    addBootstrapComponents();
-  }
-
-  private static void checkJavaVersion() {
-    try {
-      String.class.getMethod("isBlank");
-    } catch (NoSuchMethodException e) {
-      LOG.warn("SonarScanner will require Java 11 to run starting in SonarQube 8.x");
+    private GlobalContainer(Map<String, String> scannerProperties) {
+        super();
+        this.scannerProperties = scannerProperties;
     }
-  }
 
-  private void addBootstrapComponents() {
-    Version apiVersion = MetadataLoader.loadVersion(System2.INSTANCE);
-    SonarEdition edition = MetadataLoader.loadEdition(System2.INSTANCE);
-    if (edition != SonarEdition.SONARCLOUD) {
-      checkJavaVersion();
+    public static GlobalContainer create(Map<String, String> scannerProperties, List<?> extensions) {
+        GlobalContainer container = new GlobalContainer(scannerProperties);
+        container.add(extensions);
+        return container;
     }
-    LOG.debug("{} {}", edition.getLabel(), apiVersion);
-    add(
-      // plugins
-      ScannerPluginRepository.class,
-      PluginClassLoader.class,
-      PluginClassloaderFactory.class,
-      ScannerPluginJarExploder.class,
-      ExtensionInstaller.class,
-      new SonarQubeVersion(apiVersion),
-      new GlobalServerSettingsProvider(),
-      new GlobalConfigurationProvider(),
-      new ScannerWsClientProvider(),
-      DefaultServer.class,
-      new GlobalTempFolderProvider(),
-      DefaultHttpDownloader.class,
-      UriReader.class,
-      PluginFiles.class,
-      System2.INSTANCE,
-      Clock.systemDefaultZone(),
-      new MetricsRepositoryProvider(),
-      UuidFactoryImpl.INSTANCE);
-    addIfMissing(SonarRuntimeImpl.forSonarQube(apiVersion, SonarQubeSide.SCANNER, edition), SonarRuntime.class);
-    addIfMissing(ScannerPluginInstaller.class, PluginInstaller.class);
-    add(CoreExtensionRepositoryImpl.class, CoreExtensionsLoader.class, ScannerCoreExtensionsInstaller.class);
-    addIfMissing(DefaultGlobalSettingsLoader.class, GlobalSettingsLoader.class);
-    addIfMissing(DefaultNewCodePeriodLoader.class, NewCodePeriodLoader.class);
-    addIfMissing(DefaultMetricsRepositoryLoader.class, MetricsRepositoryLoader.class);
-  }
 
-  @Override
-  protected void doAfterStart() {
-    installPlugins();
-    loadCoreExtensions();
-
-    long startTime = System.currentTimeMillis();
-    String taskKey = StringUtils.defaultIfEmpty(scannerProperties.get(CoreProperties.TASK), CoreProperties.SCAN_TASK);
-    if (taskKey.equals("views")) {
-      throw MessageException.of("The task 'views' was removed with SonarQube 7.1. " +
-        "You can safely remove this call since portfolios and applications are automatically re-calculated.");
-    } else if (!taskKey.equals(CoreProperties.SCAN_TASK)) {
-      throw MessageException.of("Tasks support was removed in SonarQube 7.6.");
+    @Override
+    protected void doBeforeStart() {
+        RawScannerProperties rawScannerProperties = new RawScannerProperties(scannerProperties);
+        GlobalAnalysisMode globalMode = new GlobalAnalysisMode(rawScannerProperties);
+        add(rawScannerProperties);
+        add(globalMode);
+        addBootstrapComponents();
     }
-    String analysisMode = StringUtils.defaultIfEmpty(scannerProperties.get("sonar.analysis.mode"), "publish");
-    if (!analysisMode.equals("publish")) {
-      throw MessageException.of("The preview mode, along with the 'sonar.analysis.mode' parameter, is no more supported. You should stop using this parameter.");
+
+    private static void checkJavaVersion() {
+        try {
+            String.class.getMethod("isBlank");
+        } catch (NoSuchMethodException e) {
+            LOG.warn("SonarScanner will require Java 11 to run starting in SonarQube 8.x");
+        }
     }
-    new ProjectScanContainer(this).execute();
 
-    LOG.info("Analysis total time: {}", formatTime(System.currentTimeMillis() - startTime));
-  }
-
-  private void installPlugins() {
-    PluginRepository pluginRepository = getComponentByType(PluginRepository.class);
-    for (PluginInfo pluginInfo : pluginRepository.getPluginInfos()) {
-      Plugin instance = pluginRepository.getPluginInstance(pluginInfo.getKey());
-      addExtension(pluginInfo, instance);
+    private void addBootstrapComponents() {
+        Version apiVersion = MetadataLoader.loadVersion(System2.INSTANCE);
+        SonarEdition edition = MetadataLoader.loadEdition(System2.INSTANCE);
+        if (edition != SonarEdition.SONARCLOUD) {
+            checkJavaVersion();
+        }
+        LOG.debug("{} {}", edition.getLabel(), apiVersion);
+        add(
+            // plugins
+            ScannerPluginRepository.class,
+            PluginClassLoader.class,
+            PluginClassloaderFactory.class,
+            ScannerPluginJarExploder.class,
+            ExtensionInstaller.class,
+            new SonarQubeVersion(apiVersion),
+            new GlobalServerSettingsProvider(),
+            new GlobalConfigurationProvider(),
+            new ScannerWsClientProvider(),
+            DefaultServer.class,
+            new GlobalTempFolderProvider(),
+            DefaultHttpDownloader.class,
+            UriReader.class,
+            PluginFiles.class,
+            System2.INSTANCE,
+            Clock.systemDefaultZone(),
+            new MetricsRepositoryProvider(),
+            UuidFactoryImpl.INSTANCE);
+        addIfMissing(SonarRuntimeImpl.forSonarQube(apiVersion, SonarQubeSide.SCANNER, edition), SonarRuntime.class);
+        addIfMissing(ScannerPluginInstaller.class, PluginInstaller.class);
+        add(CoreExtensionRepositoryImpl.class, CoreExtensionsLoader.class, ScannerCoreExtensionsInstaller.class);
+        addIfMissing(DefaultGlobalSettingsLoader.class, GlobalSettingsLoader.class);
+        addIfMissing(DefaultNewCodePeriodLoader.class, NewCodePeriodLoader.class);
+        addIfMissing(DefaultMetricsRepositoryLoader.class, MetricsRepositoryLoader.class);
     }
-  }
 
-  private void loadCoreExtensions() {
-    CoreExtensionsLoader loader = getComponentByType(CoreExtensionsLoader.class);
-    loader.load();
-  }
+    @Override
+    protected void doAfterStart() {
+        installPlugins();
+        loadCoreExtensions();
 
-  static String formatTime(long time) {
-    long h = time / (60 * 60 * 1000);
-    long m = (time - h * 60 * 60 * 1000) / (60 * 1000);
-    long s = (time - h * 60 * 60 * 1000 - m * 60 * 1000) / 1000;
-    long ms = time % 1000;
-    final String format;
-    if (h > 0) {
-      format = "%1$d:%2$02d:%3$02d.%4$03d s";
-    } else if (m > 0) {
-      format = "%2$d:%3$02d.%4$03d s";
-    } else {
-      format = "%3$d.%4$03d s";
+        long startTime = System.currentTimeMillis();
+        String taskKey = StringUtils.defaultIfEmpty(scannerProperties.get(CoreProperties.TASK), CoreProperties.SCAN_TASK);
+        if (taskKey.equals("views")) {
+            throw MessageException.of("The task 'views' was removed with SonarQube 7.1. " +
+                                      "You can safely remove this call since portfolios and applications are automatically re-calculated.");
+        } else if (!taskKey.equals(CoreProperties.SCAN_TASK)) {
+            throw MessageException.of("Tasks support was removed in SonarQube 7.6.");
+        }
+        String analysisMode = StringUtils.defaultIfEmpty(scannerProperties.get("sonar.analysis.mode"), "publish");
+        if (!analysisMode.equals("publish")) {
+            throw MessageException.of("The preview mode, along with the 'sonar.analysis.mode' parameter, is no more supported. You should stop using this parameter.");
+        }
+        new ProjectScanContainer(this).execute();
+
+        LOG.info("Analysis total time: {}", formatTime(System.currentTimeMillis() - startTime));
     }
-    return String.format(format, h, m, s, ms);
-  }
+
+    private void installPlugins() {
+        PluginRepository pluginRepository = getComponentByType(PluginRepository.class);
+        for (PluginInfo pluginInfo : pluginRepository.getPluginInfos()) {
+            Plugin instance = pluginRepository.getPluginInstance(pluginInfo.getKey());
+            addExtension(pluginInfo, instance);
+        }
+    }
+
+    private void loadCoreExtensions() {
+        CoreExtensionsLoader loader = getComponentByType(CoreExtensionsLoader.class);
+        loader.load();
+    }
+
+    static String formatTime(long time) {
+        long h = time / (60 * 60 * 1000);
+        long m = (time - h * 60 * 60 * 1000) / (60 * 1000);
+        long s = (time - h * 60 * 60 * 1000 - m * 60 * 1000) / 1000;
+        long ms = time % 1000;
+        final String format;
+        if (h > 0) {
+            format = "%1$d:%2$02d:%3$02d.%4$03d s";
+        } else if (m > 0) {
+            format = "%2$d:%3$02d.%4$03d s";
+        } else {
+            format = "%3$d.%4$03d s";
+        }
+        return String.format(format, h, m, s, ms);
+    }
 
 }

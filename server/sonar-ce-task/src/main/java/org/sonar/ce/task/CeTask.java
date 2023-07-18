@@ -37,238 +37,238 @@ import static java.util.Objects.requireNonNull;
 @Immutable
 public class CeTask {
 
-  private final String organizationUuid;
-  private final String type;
-  private final String uuid;
-  private final Component component;
-  private final Component mainComponent;
-  private final User submitter;
-  private final Map<String, String> characteristics;
-
-  private CeTask(Builder builder) {
-    this.organizationUuid = requireNonNull(emptyToNull(builder.organizationUuid), "organizationUuid can't be null nor empty");
-    this.uuid = requireNonNull(emptyToNull(builder.uuid), "uuid can't be null nor empty");
-    this.type = requireNonNull(emptyToNull(builder.type), "type can't be null nor empty");
-    checkArgument((builder.component == null) == (builder.mainComponent == null),
-      "None or both component and main component must be non null");
-    this.component = builder.component;
-    this.mainComponent = builder.mainComponent;
-    this.submitter = builder.submitter;
-    if (builder.characteristics == null) {
-      this.characteristics = emptyMap();
-    } else {
-      this.characteristics = unmodifiableMap(new HashMap<>(builder.characteristics));
-    }
-  }
-
-  @Immutable
-  public static final class User {
+    private final String organizationUuid;
+    private final String type;
     private final String uuid;
-    private final String login;
+    private final Component component;
+    private final Component mainComponent;
+    private final User submitter;
+    private final Map<String, String> characteristics;
 
-    public User(String uuid, @Nullable String login) {
-      this.uuid = requireNonNull(uuid);
-      this.login = emptyToNull(login);
+    private CeTask(Builder builder) {
+        this.organizationUuid = requireNonNull(emptyToNull(builder.organizationUuid), "organizationUuid can't be null nor empty");
+        this.uuid = requireNonNull(emptyToNull(builder.uuid), "uuid can't be null nor empty");
+        this.type = requireNonNull(emptyToNull(builder.type), "type can't be null nor empty");
+        checkArgument((builder.component == null) == (builder.mainComponent == null),
+                      "None or both component and main component must be non null");
+        this.component = builder.component;
+        this.mainComponent = builder.mainComponent;
+        this.submitter = builder.submitter;
+        if (builder.characteristics == null) {
+            this.characteristics = emptyMap();
+        } else {
+            this.characteristics = unmodifiableMap(new HashMap<>(builder.characteristics));
+        }
+    }
+
+    @Immutable
+    public static final class User {
+        private final String uuid;
+        private final String login;
+
+        public User(String uuid, @Nullable String login) {
+            this.uuid = requireNonNull(uuid);
+            this.login = emptyToNull(login);
+        }
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        @CheckForNull
+        public String getLogin() {
+            return login;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            User other = (User) o;
+            return uuid.equals(other.uuid);
+        }
+
+        @Override
+        public String toString() {
+            return "User{" +
+                "uuid='" + uuid + '\'' +
+                ", login='" + login + '\'' +
+                '}';
+        }
+
+        @Override
+        public int hashCode() {
+            return uuid.hashCode();
+        }
+    }
+
+    public String getOrganizationUuid() {
+        return organizationUuid;
     }
 
     public String getUuid() {
-      return uuid;
+        return uuid;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public Optional<Component> getComponent() {
+        return Optional.ofNullable(component);
+    }
+
+    public Optional<Component> getMainComponent() {
+        return Optional.ofNullable(mainComponent);
     }
 
     @CheckForNull
-    public String getLogin() {
-      return login;
+    public User getSubmitter() {
+        return submitter;
     }
 
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      User other = (User) o;
-      return uuid.equals(other.uuid);
+    public Map<String, String> getCharacteristics() {
+        return characteristics;
     }
 
     @Override
     public String toString() {
-      return "User{" +
-              "uuid='" + uuid + '\'' +
-              ", login='" + login + '\'' +
-              '}';
+        return MoreObjects.toStringHelper(this)
+            .add("organizationUuid", organizationUuid)
+            .add("type", type)
+            .add("uuid", uuid)
+            .add("component", component)
+            .add("mainComponent", mainComponent)
+            .add("submitter", submitter)
+            .toString();
+    }
+
+    @Override
+    public boolean equals(@Nullable Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CeTask ceTask = (CeTask) o;
+        return uuid.equals(ceTask.uuid);
     }
 
     @Override
     public int hashCode() {
-      return uuid.hashCode();
-    }
-  }
-
-  public String getOrganizationUuid() {
-    return organizationUuid;
-  }
-
-  public String getUuid() {
-    return uuid;
-  }
-
-  public String getType() {
-    return type;
-  }
-
-  public Optional<Component> getComponent() {
-    return Optional.ofNullable(component);
-  }
-
-  public Optional<Component> getMainComponent() {
-    return Optional.ofNullable(mainComponent);
-  }
-
-  @CheckForNull
-  public User getSubmitter() {
-    return submitter;
-  }
-
-  public Map<String, String> getCharacteristics() {
-    return characteristics;
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-      .add("organizationUuid", organizationUuid)
-      .add("type", type)
-      .add("uuid", uuid)
-      .add("component", component)
-      .add("mainComponent", mainComponent)
-      .add("submitter", submitter)
-      .toString();
-  }
-
-  @Override
-  public boolean equals(@Nullable Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    CeTask ceTask = (CeTask) o;
-    return uuid.equals(ceTask.uuid);
-  }
-
-  @Override
-  public int hashCode() {
-    return uuid.hashCode();
-  }
-
-  public static final class Builder {
-    private String organizationUuid;
-    private String uuid;
-    private String type;
-    private Component component;
-    private Component mainComponent;
-    private User submitter;
-    private Map<String, String> characteristics;
-
-    public Builder setOrganizationUuid(String organizationUuid) {
-      this.organizationUuid = organizationUuid;
-      return this;
+        return uuid.hashCode();
     }
 
-    // FIXME remove this method when organization support is added to the Compute Engine queue
-    public boolean hasOrganizationUuid() {
-      return organizationUuid != null;
+    public static final class Builder {
+        private String organizationUuid;
+        private String uuid;
+        private String type;
+        private Component component;
+        private Component mainComponent;
+        private User submitter;
+        private Map<String, String> characteristics;
+
+        public Builder setOrganizationUuid(String organizationUuid) {
+            this.organizationUuid = organizationUuid;
+            return this;
+        }
+
+        // FIXME remove this method when organization support is added to the Compute Engine queue
+        public boolean hasOrganizationUuid() {
+            return organizationUuid != null;
+        }
+
+        public Builder setUuid(String uuid) {
+            this.uuid = uuid;
+            return this;
+        }
+
+        public Builder setType(String type) {
+            this.type = type;
+            return this;
+        }
+
+        public Builder setComponent(@Nullable Component component) {
+            this.component = component;
+            return this;
+        }
+
+        public Builder setMainComponent(@Nullable Component mainComponent) {
+            this.mainComponent = mainComponent;
+            return this;
+        }
+
+        public Builder setSubmitter(@Nullable User s) {
+            this.submitter = s;
+            return this;
+        }
+
+        public Builder setCharacteristics(@Nullable Map<String, String> m) {
+            this.characteristics = m;
+            return this;
+        }
+
+        public CeTask build() {
+            return new CeTask(this);
+        }
     }
 
-    public Builder setUuid(String uuid) {
-      this.uuid = uuid;
-      return this;
-    }
+    public static final class Component {
+        private final String uuid;
+        @CheckForNull
+        private final String key;
+        @CheckForNull
+        private final String name;
 
-    public Builder setType(String type) {
-      this.type = type;
-      return this;
-    }
+        public Component(String uuid, @Nullable String key, @Nullable String name) {
+            this.uuid = requireNonNull(emptyToNull(uuid), "uuid can't be null nor empty");
+            this.key = emptyToNull(key);
+            this.name = emptyToNull(name);
+        }
 
-    public Builder setComponent(@Nullable Component component) {
-      this.component = component;
-      return this;
-    }
+        public String getUuid() {
+            return uuid;
+        }
 
-    public Builder setMainComponent(@Nullable Component mainComponent) {
-      this.mainComponent = mainComponent;
-      return this;
-    }
+        public Optional<String> getKey() {
+            return Optional.ofNullable(key);
+        }
 
-    public Builder setSubmitter(@Nullable User s) {
-      this.submitter = s;
-      return this;
-    }
+        public Optional<String> getName() {
+            return Optional.ofNullable(name);
+        }
 
-    public Builder setCharacteristics(@Nullable Map<String, String> m) {
-      this.characteristics = m;
-      return this;
-    }
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Component component = (Component) o;
+            return Objects.equals(uuid, component.uuid) &&
+                Objects.equals(key, component.key) &&
+                Objects.equals(name, component.name);
+        }
 
-    public CeTask build() {
-      return new CeTask(this);
-    }
-  }
+        @Override
+        public int hashCode() {
+            return Objects.hash(uuid, key, name);
+        }
 
-  public static final class Component {
-    private final String uuid;
-    @CheckForNull
-    private final String key;
-    @CheckForNull
-    private final String name;
-
-    public Component(String uuid, @Nullable String key, @Nullable String name) {
-      this.uuid = requireNonNull(emptyToNull(uuid), "uuid can't be null nor empty");
-      this.key = emptyToNull(key);
-      this.name = emptyToNull(name);
+        @Override
+        public String toString() {
+            return "Component{" +
+                "uuid='" + uuid + '\'' +
+                ", key='" + key + '\'' +
+                ", name='" + name + '\'' +
+                '}';
+        }
     }
-
-    public String getUuid() {
-      return uuid;
-    }
-
-    public Optional<String> getKey() {
-      return Optional.ofNullable(key);
-    }
-
-    public Optional<String> getName() {
-      return Optional.ofNullable(name);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      Component component = (Component) o;
-      return Objects.equals(uuid, component.uuid) &&
-        Objects.equals(key, component.key) &&
-        Objects.equals(name, component.name);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(uuid, key, name);
-    }
-
-    @Override
-    public String toString() {
-      return "Component{" +
-        "uuid='" + uuid + '\'' +
-        ", key='" + key + '\'' +
-        ", name='" + name + '\'' +
-        '}';
-    }
-  }
 }

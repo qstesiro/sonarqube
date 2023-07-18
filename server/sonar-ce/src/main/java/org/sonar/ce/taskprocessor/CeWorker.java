@@ -36,51 +36,51 @@ import org.sonar.db.ce.CeActivityDto;
  */
 public interface CeWorker extends Callable<CeWorker.Result> {
 
-  enum Result {
-    /** Worker is disabled */
-    DISABLED,
-    /** Worker found no task to process */
-    NO_TASK,
-    /** Worker found a task and processed it (either successfully or not) */
-    TASK_PROCESSED
-  }
-
-  /**
-   * Position of the current CeWorker among all the running workers, starts with 0.
-   */
-  int getOrdinal();
-
-  /**
-   * UUID of the current CeWorker.
-   */
-  String getUUID();
-
-  /**
-   * @return {@code true} if this CeWorker currently being executed by the specified {@link Thread}.
-   */
-  boolean isExecutedBy(Thread thread);
-
-  /**
-   * @return the {@link CeTask} currently being executed by this worker, if any.
-   */
-  Optional<CeTask> getCurrentTask();
-
-  /**
-   * Classes implementing will be called a task start and finishes executing.
-   * All classes implementing this interface are guaranted to be called for each event, even if another implementation
-   * failed when called.
-   */
-  @ComputeEngineSide
-  interface ExecutionListener {
-    /**
-     * Called when starting executing a {@link CeTask} (which means: after it's been picked for processing, but before
-     * the execution of the task by the {@link org.sonar.ce.task.taskprocessor.CeTaskProcessor#process(CeTask)}).
-     */
-    void onStart(CeTask ceTask);
+    enum Result {
+        /** Worker is disabled */
+        DISABLED,
+        /** Worker found no task to process */
+        NO_TASK,
+        /** Worker found a task and processed it (either successfully or not) */
+        TASK_PROCESSED
+    }
 
     /**
-     * Called when the processing of the task is finished (which means: after it's been moved to history).
+     * Position of the current CeWorker among all the running workers, starts with 0.
      */
-    void onEnd(CeTask ceTask, CeActivityDto.Status status, Duration duration, @Nullable CeTaskResult taskResult, @Nullable Throwable error);
-  }
+    int getOrdinal();
+
+    /**
+     * UUID of the current CeWorker.
+     */
+    String getUUID();
+
+    /**
+     * @return {@code true} if this CeWorker currently being executed by the specified {@link Thread}.
+     */
+    boolean isExecutedBy(Thread thread);
+
+    /**
+     * @return the {@link CeTask} currently being executed by this worker, if any.
+     */
+    Optional<CeTask> getCurrentTask();
+
+    /**
+     * Classes implementing will be called a task start and finishes executing.
+     * All classes implementing this interface are guaranted to be called for each event, even if another implementation
+     * failed when called.
+     */
+    @ComputeEngineSide
+    interface ExecutionListener {
+        /**
+         * Called when starting executing a {@link CeTask} (which means: after it's been picked for processing, but before
+         * the execution of the task by the {@link org.sonar.ce.task.taskprocessor.CeTaskProcessor#process(CeTask)}).
+         */
+        void onStart(CeTask ceTask);
+
+        /**
+         * Called when the processing of the task is finished (which means: after it's been moved to history).
+         */
+        void onEnd(CeTask ceTask, CeActivityDto.Status status, Duration duration, @Nullable CeTaskResult taskResult, @Nullable Throwable error);
+    }
 }

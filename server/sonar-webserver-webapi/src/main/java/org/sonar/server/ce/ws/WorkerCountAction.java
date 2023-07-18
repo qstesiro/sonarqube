@@ -32,49 +32,50 @@ import static org.sonar.server.ce.ws.CeWsParameters.ACTION_WORKER_COUNT;
 
 public class WorkerCountAction implements CeWsAction {
 
-  private static final int DEFAULT_WORKER_COUNT = 1;
+    // private static final int DEFAULT_WORKER_COUNT = 1;
+    private static final int DEFAULT_WORKER_COUNT = 2;
 
-  private final UserSession userSession;
-  private final WorkerCountProvider workerCountProvider;
+    private final UserSession userSession;
+    private final WorkerCountProvider workerCountProvider;
 
-  public WorkerCountAction(UserSession userSession, @Nullable WorkerCountProvider workerCountProvider) {
-    this.userSession = userSession;
-    this.workerCountProvider = workerCountProvider;
-  }
-
-  public WorkerCountAction(UserSession userSession) {
-    this(userSession, null);
-  }
-
-  @Override
-  public void define(WebService.NewController controller) {
-    controller.createAction(ACTION_WORKER_COUNT)
-      .setDescription("Return number of Compute Engine workers.<br/>" +
-        "Requires the system administration permission")
-      .setResponseExample(getClass().getResource("worker_count-example.json"))
-      .setSince("6.5")
-      .setInternal(true)
-      .setHandler(this);
-  }
-
-  @Override
-  public void handle(Request wsRequest, Response wsResponse) throws Exception {
-    userSession.checkIsSystemAdministrator();
-    writeProtobuf(createResponse(), wsRequest, wsResponse);
-  }
-
-  private WorkerCountResponse createResponse(){
-    WorkerCountResponse.Builder builder = WorkerCountResponse.newBuilder();
-    if (workerCountProvider == null) {
-      return builder
-        .setValue(DEFAULT_WORKER_COUNT)
-        .setCanSetWorkerCount(false)
-        .build();
+    public WorkerCountAction(UserSession userSession, @Nullable WorkerCountProvider workerCountProvider) {
+        this.userSession = userSession;
+        this.workerCountProvider = workerCountProvider;
     }
-    return builder
-      .setValue(workerCountProvider.get())
-      .setCanSetWorkerCount(true)
-      .build();
-  }
+
+    public WorkerCountAction(UserSession userSession) {
+        this(userSession, null);
+    }
+
+    @Override
+    public void define(WebService.NewController controller) {
+        controller.createAction(ACTION_WORKER_COUNT)
+            .setDescription("Return number of Compute Engine workers.<br/>" +
+                            "Requires the system administration permission")
+            .setResponseExample(getClass().getResource("worker_count-example.json"))
+            .setSince("6.5")
+            .setInternal(true)
+            .setHandler(this);
+    }
+
+    @Override
+    public void handle(Request wsRequest, Response wsResponse) throws Exception {
+        userSession.checkIsSystemAdministrator();
+        writeProtobuf(createResponse(), wsRequest, wsResponse);
+    }
+
+    private WorkerCountResponse createResponse(){
+        WorkerCountResponse.Builder builder = WorkerCountResponse.newBuilder();
+        if (workerCountProvider == null) {
+            return builder
+                .setValue(DEFAULT_WORKER_COUNT)
+                .setCanSetWorkerCount(false)
+                .build();
+        }
+        return builder
+            .setValue(workerCountProvider.get())
+            .setCanSetWorkerCount(true)
+            .build();
+    }
 
 }

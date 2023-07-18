@@ -44,54 +44,54 @@ import org.sonar.process.FileUtils2;
  */
 public class ExtractReportStep implements ComputationStep {
 
-  private static final Logger LOGGER = Loggers.get(ExtractReportStep.class);
+    private static final Logger LOGGER = Loggers.get(ExtractReportStep.class);
 
-  private final DbClient dbClient;
-  private final CeTask task;
-  private final TempFolder tempFolder;
-  private final MutableBatchReportDirectoryHolder reportDirectoryHolder;
+    private final DbClient dbClient;
+    private final CeTask task;
+    private final TempFolder tempFolder;
+    private final MutableBatchReportDirectoryHolder reportDirectoryHolder;
 
-  public ExtractReportStep(DbClient dbClient, CeTask task, TempFolder tempFolder,
-    MutableBatchReportDirectoryHolder reportDirectoryHolder) {
-    this.dbClient = dbClient;
-    this.task = task;
-    this.tempFolder = tempFolder;
-    this.reportDirectoryHolder = reportDirectoryHolder;
-  }
-
-  @Override
-  public void execute(ComputationStep.Context context) {
-    try (DbSession dbSession = dbClient.openSession(false)) {
-      Optional<CeTaskInputDao.DataStream> opt = dbClient.ceTaskInputDao().selectData(dbSession, task.getUuid());
-      if (opt.isPresent()) {
-        File unzippedDir = tempFolder.newDir();
-        try (CeTaskInputDao.DataStream reportStream = opt.get();
-             InputStream zipStream = new BufferedInputStream(reportStream.getInputStream())) {
-          ZipUtils.unzip(zipStream, unzippedDir);
-        } catch (IOException e) {
-          throw new IllegalStateException("Fail to extract report " + task.getUuid() + " from database", e);
-        }
-        reportDirectoryHolder.setDirectory(unzippedDir);
-        if (LOGGER.isDebugEnabled()) {
-          // size is not added to context statistics because computation
-          // can take time. It's enabled only if log level is DEBUG.
-          try {
-            String dirSize = FileUtils.byteCountToDisplaySize(FileUtils2.sizeOf(unzippedDir.toPath()));
-            LOGGER.debug("Analysis report is {} uncompressed", dirSize);
-          } catch (IOException e) {
-            LOGGER.warn("Fail to compute size of directory " + unzippedDir, e);
-          }
-        }
-
-      } else {
-        throw MessageException.of("Analysis report " + task.getUuid() + " is missing in database");
-      }
+    public ExtractReportStep(DbClient dbClient, CeTask task, TempFolder tempFolder,
+                             MutableBatchReportDirectoryHolder reportDirectoryHolder) {
+        this.dbClient = dbClient;
+        this.task = task;
+        this.tempFolder = tempFolder;
+        this.reportDirectoryHolder = reportDirectoryHolder;
     }
-  }
 
-  @Override
-  public String getDescription() {
-    return "Extract report";
-  }
+    @Override
+    public void execute(ComputationStep.Context context) {
+        try (DbSession dbSession = dbClient.openSession(false)) {
+            Optional<CeTaskInputDao.DataStream> opt = dbClient.ceTaskInputDao().selectData(dbSession, task.getUuid());
+            if (opt.isPresent()) {
+                File unzippedDir = tempFolder.newDir();
+                try (CeTaskInputDao.DataStream reportStream = opt.get();
+                     InputStream zipStream = new BufferedInputStream(reportStream.getInputStream())) {
+                    ZipUtils.unzip(zipStream, unzippedDir);
+                } catch (IOException e) {
+                    throw new IllegalStateException("Fail to extract report " + task.getUuid() + " from database", e);
+                }
+                reportDirectoryHolder.setDirectory(unzippedDir);
+                if (LOGGER.isDebugEnabled()) {
+                    // size is not added to context statistics because computation
+                    // can take time. It's enabled only if log level is DEBUG.
+                    try {
+                        String dirSize = FileUtils.byteCountToDisplaySize(FileUtils2.sizeOf(unzippedDir.toPath()));
+                        LOGGER.debug("Analysis report is {} uncompressed", dirSize);
+                    } catch (IOException e) {
+                        LOGGER.warn("Fail to compute size of directory " + unzippedDir, e);
+                    }
+                }
+
+            } else {
+                throw MessageException.of("Analysis report " + task.getUuid() + " is missing in database");
+            }
+        }
+    }
+
+    @Override
+    public String getDescription() {
+        return "Extract report";
+    }
 
 }
