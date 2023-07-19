@@ -75,8 +75,8 @@ public class CeWorkerFactoryImpl implements CeWorkerFactory {
     @Override
     public Set<CeWorker> getWorkers() {
         // ???
-        // Stream.of(Thread.currentThread().getStackTrace())
-        //     .forEach(e -> LOG.info("--- getWorkers - {}", e));
+        Stream.of(Thread.currentThread().getStackTrace())
+            .forEach(e -> LOG.info("--- getWorkers - {}", e));
         return ceWorkers;
     }
 }

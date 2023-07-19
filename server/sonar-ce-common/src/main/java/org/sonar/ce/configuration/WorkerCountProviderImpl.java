@@ -19,25 +19,27 @@
  */
 package org.sonar.ce.configuration;
 
-import org.sonar.api.ce.ComputeEngineSide;
-import org.sonar.api.server.ServerSide;
-
 /**
  * When an implementation of this interface is available in Pico, the Compute Engine will use the value returned by
  * {@link #get()} as the number of worker the Compute Engine should run on.
  */
-@ComputeEngineSide
-@ServerSide
-public interface WorkerCountProvider {
+public class WorkerCountProviderImpl implements WorkerCountProvider {
 
-    /**
-     * @return an integer strictly greater than 0
-     */
-    int get();
+    private static final String WORKER_COUNT = "SONAR_WORKER_COUNT";
 
-    // 有风险 ???
-    /**
-     * @return an integer which is processor cores
-     */
-    int getCores();
+    @Override
+    public int get() {
+        try {
+            return Integer.parseInt(System.getenv("SONAR_WORKER_COUNT"));
+        } catch(NumberFormatException e) {
+            return getCores();
+        }
+    }
+
+    private static final int MUL_CORE = 2;
+
+    @Override
+    public int getCores() {
+        return Runtime.getRuntime().availableProcessors() * MUL_CORE;
+    }
 }

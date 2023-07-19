@@ -44,8 +44,10 @@ public class CeConfigurationImpl implements CeConfiguration {
 
     // debug ???
     private static final int DEFAULT_WORKER_THREAD_COUNT = 1;
-    private static final int MAX_WORKER_THREAD_COUNT = 10;
     private static final int DEFAULT_WORKER_COUNT = DEFAULT_WORKER_THREAD_COUNT;
+    // 暂不使用使用core数
+    // private static final int MAX_WORKER_THREAD_COUNT = 10;
+    // private static final int MAX_WORKER_COUNT = MAX_WORKER_THREAD_COUNT;
 
     // 2 seconds
     private static final long DEFAULT_QUEUE_POLLING_DELAY = 2 * 1000L;
@@ -61,7 +63,7 @@ public class CeConfigurationImpl implements CeConfiguration {
     private int workerCount;
 
     public CeConfigurationImpl(Configuration configuration) {
-        this(configuration, null);
+        this(configuration, new WorkerCountProviderImpl());
     }
 
     public CeConfigurationImpl(Configuration configuration, @Nullable WorkerCountProvider workerCountProvider) {
@@ -74,13 +76,15 @@ public class CeConfigurationImpl implements CeConfiguration {
             .orElse(Long.parseLong(CE_GRACEFUL_STOP_TIMEOUT.getDefaultValue()));
         if (workerCountProvider == null) {
             this.workerCount = DEFAULT_WORKER_COUNT;
-            this.workerThreadCount = DEFAULT_WORKER_THREAD_COUNT;
+            // this.workerThreadCount = DEFAULT_WORKER_THREAD_COUNT;
+            this.workerThreadCount = workerCountProvider.getCores(); // ???
             LOG.info("--- workerCountProvider == null, workerCount: {}, workerThreadCount: {}",
                      this.workerCount,
                      this.workerThreadCount);
         } else {
             this.workerCount = readWorkerCount(workerCountProvider);
-            this.workerThreadCount = MAX_WORKER_THREAD_COUNT;
+            // this.workerThreadCount = MAX_WORKER_THREAD_COUNT;
+            this.workerThreadCount = workerCountProvider.getCores(); // ???
             LOG.info("--- workerCountProvider != null, workerCount: {}, workerThreadCount: {}",
                      this.workerCount,
                      this.workerThreadCount);
@@ -89,8 +93,13 @@ public class CeConfigurationImpl implements CeConfiguration {
 
     private static synchronized int readWorkerCount(WorkerCountProvider workerCountProvider) {
         int value = workerCountProvider.get();
-        if (value < DEFAULT_WORKER_COUNT || value > MAX_WORKER_THREAD_COUNT) {
-            throw parsingError(value);
+        // if (value < DEFAULT_WORKER_COUNT || value > MAX_WORKER_THREAD_COUNT) {
+        //     throw parsingError(value);
+        // }
+        // ???
+        int cores = workerCountProvider.getCores();
+        if (value < DEFAULT_WORKER_COUNT || value > cores) {
+            return cores;
         }
         return value;
     }
