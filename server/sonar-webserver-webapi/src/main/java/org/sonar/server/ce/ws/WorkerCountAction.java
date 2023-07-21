@@ -26,6 +26,7 @@ import org.sonar.api.server.ws.WebService;
 import org.sonar.ce.configuration.WorkerCountProvider;
 import org.sonar.server.user.UserSession;
 import org.sonarqube.ws.Ce.WorkerCountResponse;
+import org.sonar.ce.configuration.WorkerCountProviderImpl;
 
 import static org.sonar.server.ws.WsUtils.writeProtobuf;
 import static org.sonar.server.ce.ws.CeWsParameters.ACTION_WORKER_COUNT;
@@ -33,7 +34,7 @@ import static org.sonar.server.ce.ws.CeWsParameters.ACTION_WORKER_COUNT;
 public class WorkerCountAction implements CeWsAction {
 
     // private static final int DEFAULT_WORKER_COUNT = 1;
-    private static final int DEFAULT_WORKER_COUNT = 2;
+    private static final int DEFAULT_WORKER_COUNT = new WorkerCountProviderImpl().get();
 
     private final UserSession userSession;
     private final WorkerCountProvider workerCountProvider;

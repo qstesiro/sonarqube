@@ -88,7 +88,7 @@ public class CeWorkerImpl implements CeWorker {
     @Override
     public Result call() {
         try (TrackRunningState trackRunningState = new TrackRunningState(this::findAndProcessTask)) {
-            LOG.info("--- CeWorkerImpl.call {}", Thread.currentThread().getId());
+            // LOG.info("--- CeWorkerImpl.call {}", Thread.currentThread().getId());
             // ???
             // Stream.of(Thread.currentThread().getStackTrace())
             //     .forEach(e -> LOG.info("--- call - {}", e));
@@ -160,7 +160,7 @@ public class CeWorkerImpl implements CeWorker {
     }
 
     private Result findAndProcessTask(RunningState localRunningState) {
-        LOG.info("--- CeWorkerImpl.findAndProcessTask");
+        // LOG.info("--- CeWorkerImpl.findAndProcessTask");
         if (!ceWorkerController.isEnabled(this)) {
             return DISABLED;
         }

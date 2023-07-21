@@ -34,10 +34,4 @@ public interface WorkerCountProvider {
      * @return an integer strictly greater than 0
      */
     int get();
-
-    // 有风险 ???
-    /**
-     * @return an integer which is processor cores
-     */
-    int getCores();
 }

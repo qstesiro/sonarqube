@@ -30,16 +30,25 @@ public class WorkerCountProviderImpl implements WorkerCountProvider {
     @Override
     public int get() {
         try {
-            return Integer.parseInt(System.getenv("SONAR_WORKER_COUNT"));
+            return Integer.parseInt(System.getenv(WORKER_COUNT));
         } catch(NumberFormatException e) {
-            return getCores();
+            return getWorkers();
         }
     }
 
-    private static final int MUL_CORE = 2;
+    private static final String CORE_MUL = "SONAR_CORE_MUL";
+    private static final int CORE_MUL_DEF = 1;
+    private static final int CORE_MUL_MAX = 3;
 
-    @Override
-    public int getCores() {
-        return Runtime.getRuntime().availableProcessors() * MUL_CORE;
+    private int getWorkers() {
+        int mul = CORE_MUL_DEF;
+        try {
+            mul = Integer.parseInt(System.getenv(CORE_MUL));
+            if (mul < CORE_MUL_DEF || mul > CORE_MUL_MAX) {
+                mul = CORE_MUL_DEF;
+            }
+        } catch(NumberFormatException e) {
+        }
+        return Runtime.getRuntime().availableProcessors() * mul;
     }
 }
