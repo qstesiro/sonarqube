@@ -57,168 +57,168 @@ import static org.sonar.server.es.metadata.MetadataIndexDefinition.TYPE_METADATA
 @ServerSide
 public class IndexCreator implements Startable {
 
-  private static final Logger LOGGER = Loggers.get(IndexCreator.class);
+    private static final Logger LOGGER = Loggers.get(IndexCreator.class);
 
-  private final MetadataIndexDefinition metadataIndexDefinition;
-  private final MetadataIndex metadataIndex;
-  private final EsClient client;
-  private final MigrationEsClient migrationEsClient;
-  private final IndexDefinitions definitions;
-  private final EsDbCompatibility esDbCompatibility;
-  private final Configuration configuration;
+    private final MetadataIndexDefinition metadataIndexDefinition;
+    private final MetadataIndex metadataIndex;
+    private final EsClient client;
+    private final MigrationEsClient migrationEsClient;
+    private final IndexDefinitions definitions;
+    private final EsDbCompatibility esDbCompatibility;
+    private final Configuration configuration;
 
-  public IndexCreator(EsClient client, IndexDefinitions definitions, MetadataIndexDefinition metadataIndexDefinition,
-    MetadataIndex metadataIndex, MigrationEsClient migrationEsClient, EsDbCompatibility esDbCompatibility, Configuration configuration) {
-    this.client = client;
-    this.definitions = definitions;
-    this.metadataIndexDefinition = metadataIndexDefinition;
-    this.metadataIndex = metadataIndex;
-    this.migrationEsClient = migrationEsClient;
-    this.esDbCompatibility = esDbCompatibility;
-    this.configuration = configuration;
-  }
-
-  @Override
-  public void start() {
-    // create the "metadata" index first
-    IndexType.IndexMainType metadataMainType = TYPE_METADATA;
-    if (!client.indexExists(new GetIndexRequest(metadataMainType.getIndex().getName()))) {
-      IndexDefinition.IndexDefinitionContext context = new IndexDefinition.IndexDefinitionContext();
-      metadataIndexDefinition.define(context);
-      NewIndex index = context.getIndices().values().iterator().next();
-      createIndex(index.build(), false);
-    } else {
-      ensureWritable(metadataMainType);
+    public IndexCreator(EsClient client, IndexDefinitions definitions, MetadataIndexDefinition metadataIndexDefinition,
+                        MetadataIndex metadataIndex, MigrationEsClient migrationEsClient, EsDbCompatibility esDbCompatibility, Configuration configuration) {
+        this.client = client;
+        this.definitions = definitions;
+        this.metadataIndexDefinition = metadataIndexDefinition;
+        this.metadataIndex = metadataIndex;
+        this.migrationEsClient = migrationEsClient;
+        this.esDbCompatibility = esDbCompatibility;
+        this.configuration = configuration;
     }
 
-    checkDbCompatibility(definitions.getIndices().values());
-
-    // create indices that do not exist or that have a new definition (different mapping, cluster enabled, ...)
-    definitions.getIndices().values().stream()
-      .filter(i -> !i.getMainType().equals(metadataMainType))
-      .forEach(index -> {
-        boolean exists = client.indexExists(new GetIndexRequest(index.getMainType().getIndex().getName()));
-        if (!exists) {
-          createIndex(index, true);
-        } else if (hasDefinitionChange(index)) {
-          updateIndex(index);
+    @Override
+    public void start() {
+        // create the "metadata" index first
+        IndexType.IndexMainType metadataMainType = TYPE_METADATA;
+        if (!client.indexExists(new GetIndexRequest(metadataMainType.getIndex().getName()))) {
+            IndexDefinition.IndexDefinitionContext context = new IndexDefinition.IndexDefinitionContext();
+            metadataIndexDefinition.define(context);
+            NewIndex index = context.getIndices().values().iterator().next();
+            createIndex(index.build(), false);
         } else {
-          ensureWritable(index.getMainType());
+            ensureWritable(metadataMainType);
         }
-      });
-  }
 
-  private void ensureWritable(IndexType.IndexMainType mainType) {
-    if (isReadOnly(mainType)) {
-      removeReadOnly(mainType);
+        checkDbCompatibility(definitions.getIndices().values());
+
+        // create indices that do not exist or that have a new definition (different mapping, cluster enabled, ...)
+        definitions.getIndices().values().stream()
+            .filter(i -> !i.getMainType().equals(metadataMainType))
+            .forEach(index -> {
+                    boolean exists = client.indexExists(new GetIndexRequest(index.getMainType().getIndex().getName()));
+                    if (!exists) {
+                        createIndex(index, true);
+                    } else if (hasDefinitionChange(index)) {
+                        updateIndex(index);
+                    } else {
+                        ensureWritable(index.getMainType());
+                    }
+                });
     }
-  }
 
-  private boolean isReadOnly(IndexType.IndexMainType mainType) {
-    String indexName = mainType.getIndex().getName();
-    String readOnly = client.getSettings(new GetSettingsRequest().indices(indexName))
-      .getSetting(indexName, "index.blocks.read_only_allow_delete");
-    return "true".equalsIgnoreCase(readOnly);
-  }
-
-  private void removeReadOnly(IndexType.IndexMainType mainType) {
-    LOGGER.info("Index [{}] is read-only. Making it writable...", mainType.getIndex().getName());
-
-    String indexName = mainType.getIndex().getName();
-    Settings.Builder builder = Settings.builder();
-    builder.putNull("index.blocks.read_only_allow_delete");
-
-    client.putSettings(new UpdateSettingsRequest().indices(indexName).settings(builder.build()));
-  }
-
-  @Override
-  public void stop() {
-    // nothing to do
-  }
-
-  private void createIndex(BuiltIndex<?> builtIndex, boolean useMetadata) {
-    Index index = builtIndex.getMainType().getIndex();
-    LOGGER.info(String.format("Create index [%s]", index.getName()));
-    Settings.Builder settings = Settings.builder();
-    settings.put(builtIndex.getSettings());
-    if (useMetadata) {
-      metadataIndex.setHash(index, IndexDefinitionHash.of(builtIndex));
-      metadataIndex.setInitialized(builtIndex.getMainType(), false);
-      builtIndex.getRelationTypes().forEach(relationType -> metadataIndex.setInitialized(relationType, false));
+    private void ensureWritable(IndexType.IndexMainType mainType) {
+        if (isReadOnly(mainType)) {
+            removeReadOnly(mainType);
+        }
     }
-    CreateIndexResponse indexResponse = client.create(new CreateIndexRequest(index.getName()).settings((settings)));
 
-    if (!indexResponse.isAcknowledged()) {
-      throw new IllegalStateException("Failed to create index [" + index.getName() + "]");
+    private boolean isReadOnly(IndexType.IndexMainType mainType) {
+        String indexName = mainType.getIndex().getName();
+        String readOnly = client.getSettings(new GetSettingsRequest().indices(indexName))
+            .getSetting(indexName, "index.blocks.read_only_allow_delete");
+        return "true".equalsIgnoreCase(readOnly);
     }
-    client.waitForStatus(ClusterHealthStatus.YELLOW);
 
-    // create types
-    LOGGER.info("Create type {}", builtIndex.getMainType().format());
-    AcknowledgedResponse mappingResponse = client.putMapping(new PutMappingRequest(builtIndex.getMainType().getIndex().getName())
-      .type(builtIndex.getMainType().getType())
-      .source(builtIndex.getAttributes()));
+    private void removeReadOnly(IndexType.IndexMainType mainType) {
+        LOGGER.info("Index [{}] is read-only. Making it writable...", mainType.getIndex().getName());
 
-    if (!mappingResponse.isAcknowledged()) {
-      throw new IllegalStateException("Failed to create type " + builtIndex.getMainType().getType());
+        String indexName = mainType.getIndex().getName();
+        Settings.Builder builder = Settings.builder();
+        builder.putNull("index.blocks.read_only_allow_delete");
+
+        client.putSettings(new UpdateSettingsRequest().indices(indexName).settings(builder.build()));
     }
-    client.waitForStatus(ClusterHealthStatus.YELLOW);
-  }
 
-  private void deleteIndex(String indexName) {
-    client.deleteIndex(new DeleteIndexRequest(indexName));
-  }
-
-  private void updateIndex(BuiltIndex<?> index) {
-    boolean blueGreen = configuration.getBoolean(ProcessProperties.Property.BLUE_GREEN_ENABLED.getKey()).orElse(false);
-    String indexName = index.getMainType().getIndex().getName();
-
-    if (blueGreen) {
-      // SonarCloud
-      if (migrationEsClient.getUpdatedIndices().contains(indexName)) {
-        LOGGER.info("Resetting definition hash of Elasticsearch index [{}]", indexName);
-        metadataIndex.setHash(index.getMainType().getIndex(), IndexDefinitionHash.of(index));
-      } else {
-        throw new IllegalStateException("Blue/green deployment is not supported. Elasticsearch index [" + indexName + "] changed and needs to be dropped.");
-      }
-    } else {
-      // SonarQube
-      LOGGER.info("Delete Elasticsearch index {} (structure changed)", indexName);
-      deleteIndex(indexName);
-      createIndex(index, true);
+    @Override
+    public void stop() {
+        // nothing to do
     }
-  }
 
-  private boolean hasDefinitionChange(BuiltIndex<?> index) {
-    return metadataIndex.getHash(index.getMainType().getIndex())
-      .map(hash -> {
-        String defHash = IndexDefinitionHash.of(index);
-        return !StringUtils.equals(hash, defHash);
-      }).orElse(true);
-  }
+    private void createIndex(BuiltIndex<?> builtIndex, boolean useMetadata) {
+        Index index = builtIndex.getMainType().getIndex();
+        LOGGER.info(String.format("Create index [%s]", index.getName()));
+        Settings.Builder settings = Settings.builder();
+        settings.put(builtIndex.getSettings());
+        if (useMetadata) {
+            metadataIndex.setHash(index, IndexDefinitionHash.of(builtIndex));
+            metadataIndex.setInitialized(builtIndex.getMainType(), false);
+            builtIndex.getRelationTypes().forEach(relationType -> metadataIndex.setInitialized(relationType, false));
+        }
+        CreateIndexResponse indexResponse = client.create(new CreateIndexRequest(index.getName()).settings((settings)));
 
-  private void checkDbCompatibility(Collection<BuiltIndex> definitions) {
-    List<String> existingIndices = loadExistingIndicesExceptMetadata(definitions);
-    if (!existingIndices.isEmpty()) {
-      boolean delete = false;
-      if (!esDbCompatibility.hasSameDbVendor()) {
-        LOGGER.info("Delete Elasticsearch indices (DB vendor changed)");
-        delete = true;
-      }
-      if (delete) {
-        existingIndices.forEach(this::deleteIndex);
-      }
+        if (!indexResponse.isAcknowledged()) {
+            throw new IllegalStateException("Failed to create index [" + index.getName() + "]");
+        }
+        client.waitForStatus(ClusterHealthStatus.YELLOW);
+
+        // create types
+        LOGGER.info("Create type {}", builtIndex.getMainType().format());
+        AcknowledgedResponse mappingResponse = client.putMapping(new PutMappingRequest(builtIndex.getMainType().getIndex().getName())
+                                                                 .type(builtIndex.getMainType().getType())
+                                                                 .source(builtIndex.getAttributes()));
+
+        if (!mappingResponse.isAcknowledged()) {
+            throw new IllegalStateException("Failed to create type " + builtIndex.getMainType().getType());
+        }
+        client.waitForStatus(ClusterHealthStatus.YELLOW);
     }
-    esDbCompatibility.markAsCompatible();
-  }
 
-  private List<String> loadExistingIndicesExceptMetadata(Collection<BuiltIndex> definitions) {
-    Set<String> definedNames = definitions.stream()
-      .map(t -> t.getMainType().getIndex().getName())
-      .collect(Collectors.toSet());
-    return Arrays.stream(client.getIndex(new GetIndexRequest("_all")).getIndices())
-      .filter(definedNames::contains)
-      .filter(index -> !DESCRIPTOR.getName().equals(index))
-      .collect(Collectors.toList());
-  }
+    private void deleteIndex(String indexName) {
+        client.deleteIndex(new DeleteIndexRequest(indexName));
+    }
+
+    private void updateIndex(BuiltIndex<?> index) {
+        boolean blueGreen = configuration.getBoolean(ProcessProperties.Property.BLUE_GREEN_ENABLED.getKey()).orElse(false);
+        String indexName = index.getMainType().getIndex().getName();
+
+        if (blueGreen) {
+            // SonarCloud
+            if (migrationEsClient.getUpdatedIndices().contains(indexName)) {
+                LOGGER.info("Resetting definition hash of Elasticsearch index [{}]", indexName);
+                metadataIndex.setHash(index.getMainType().getIndex(), IndexDefinitionHash.of(index));
+            } else {
+                throw new IllegalStateException("Blue/green deployment is not supported. Elasticsearch index [" + indexName + "] changed and needs to be dropped.");
+            }
+        } else {
+            // SonarQube
+            LOGGER.info("Delete Elasticsearch index {} (structure changed)", indexName);
+            deleteIndex(indexName);
+            createIndex(index, true);
+        }
+    }
+
+    private boolean hasDefinitionChange(BuiltIndex<?> index) {
+        return metadataIndex.getHash(index.getMainType().getIndex())
+            .map(hash -> {
+                    String defHash = IndexDefinitionHash.of(index);
+                    return !StringUtils.equals(hash, defHash);
+                }).orElse(true);
+    }
+
+    private void checkDbCompatibility(Collection<BuiltIndex> definitions) {
+        List<String> existingIndices = loadExistingIndicesExceptMetadata(definitions);
+        if (!existingIndices.isEmpty()) {
+            boolean delete = false;
+            if (!esDbCompatibility.hasSameDbVendor()) {
+                LOGGER.info("Delete Elasticsearch indices (DB vendor changed)");
+                delete = true;
+            }
+            if (delete) {
+                existingIndices.forEach(this::deleteIndex);
+            }
+        }
+        esDbCompatibility.markAsCompatible();
+    }
+
+    private List<String> loadExistingIndicesExceptMetadata(Collection<BuiltIndex> definitions) {
+        Set<String> definedNames = definitions.stream()
+            .map(t -> t.getMainType().getIndex().getName())
+            .collect(Collectors.toSet());
+        return Arrays.stream(client.getIndex(new GetIndexRequest("_all")).getIndices())
+            .filter(definedNames::contains)
+            .filter(index -> !DESCRIPTOR.getName().equals(index))
+            .collect(Collectors.toList());
+    }
 }

@@ -62,11 +62,10 @@ public class CeConfigurationImpl implements CeConfiguration {
     private int workerCount;
 
     public CeConfigurationImpl(Configuration configuration) {
-        this(configuration, new WorkerCountProviderImpl());
+        this(configuration, new WorkerCountProviderImpl(configuration));
     }
 
     public CeConfigurationImpl(Configuration configuration, @Nullable WorkerCountProvider workerCountProvider) {
-
         // ???
         Stream.of(Thread.currentThread().getStackTrace())
             .forEach(e -> LOG.info("--- CeConfigurationImpl - {}", e));

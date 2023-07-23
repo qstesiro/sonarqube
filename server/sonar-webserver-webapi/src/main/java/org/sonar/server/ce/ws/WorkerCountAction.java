@@ -19,10 +19,15 @@
  */
 package org.sonar.server.ce.ws;
 
+import java.util.stream.Stream;
+
 import javax.annotation.Nullable;
 import org.sonar.api.server.ws.Request;
 import org.sonar.api.server.ws.Response;
 import org.sonar.api.server.ws.WebService;
+import org.sonar.api.config.Configuration;
+import org.sonar.api.utils.log.Logger;
+import org.sonar.api.utils.log.Loggers;
 import org.sonar.ce.configuration.WorkerCountProvider;
 import org.sonar.server.user.UserSession;
 import org.sonarqube.ws.Ce.WorkerCountResponse;
@@ -33,19 +38,23 @@ import static org.sonar.server.ce.ws.CeWsParameters.ACTION_WORKER_COUNT;
 
 public class WorkerCountAction implements CeWsAction {
 
-    // private static final int DEFAULT_WORKER_COUNT = 1;
-    private static final int DEFAULT_WORKER_COUNT = new WorkerCountProviderImpl().get();
+    private static final Logger LOG = Loggers.get(WorkerCountAction.class);
+
+    private static final int DEFAULT_WORKER_COUNT = 1;
 
     private final UserSession userSession;
     private final WorkerCountProvider workerCountProvider;
 
     public WorkerCountAction(UserSession userSession, @Nullable WorkerCountProvider workerCountProvider) {
+        // ???
+        Stream.of(Thread.currentThread().getStackTrace())
+            .forEach(e -> LOG.info("--- WorkerCountAction - {}", e));
         this.userSession = userSession;
         this.workerCountProvider = workerCountProvider;
     }
 
     public WorkerCountAction(UserSession userSession) {
-        this(userSession, null);
+        this(userSession, new WorkerCountProviderImpl());
     }
 
     @Override

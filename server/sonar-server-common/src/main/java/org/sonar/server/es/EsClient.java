@@ -28,6 +28,10 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.function.Supplier;
 import org.apache.http.HttpHost;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
@@ -86,206 +90,270 @@ import static org.sonar.server.es.EsRequestDetails.computeDetailsAsString;
  * with context) and profiling of requests.
  */
 public class EsClient implements Closeable {
-  private final RestHighLevelClient restHighLevelClient;
-  private final Gson gson;
 
-  public static final Logger LOGGER = Loggers.get("es");
+    private final RestHighLevelClient restHighLevelClient;
+    private final Gson gson;
 
-  public EsClient(HttpHost... hosts) {
-    this(new MinimalRestHighLevelClient(hosts));
-  }
+    public static final Logger LOGGER = Loggers.get("es");
+    // public static final Logger LOGGER = Loggers.get(EsClient.class);
 
-  EsClient(RestHighLevelClient restHighLevelClient) {
-    this.restHighLevelClient = restHighLevelClient;
-    this.gson = new GsonBuilder().create();
-  }
-
-  public BulkResponse bulk(BulkRequest bulkRequest) {
-    return execute(() -> restHighLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT));
-  }
-
-  public Cancellable bulkAsync(BulkRequest bulkRequest, ActionListener<BulkResponse> listener) {
-    return restHighLevelClient.bulkAsync(bulkRequest, RequestOptions.DEFAULT, listener);
-  }
-
-  public static SearchRequest prepareSearch(String indexName) {
-    return Requests.searchRequest(indexName);
-  }
-
-  public static SearchRequest prepareSearch(IndexType.IndexMainType mainType) {
-    return Requests.searchRequest(mainType.getIndex().getName()).types(mainType.getType());
-  }
-
-  public static SearchRequest prepareSearch(String index, String type) {
-    return Requests.searchRequest(index).types(type);
-  }
-
-  public SearchResponse search(SearchRequest searchRequest) {
-    return execute(() -> restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT),
-      () -> computeDetailsAsString(searchRequest));
-  }
-
-  public SearchResponse scroll(SearchScrollRequest searchScrollRequest) {
-    return execute(() -> restHighLevelClient.scroll(searchScrollRequest, RequestOptions.DEFAULT),
-      () -> computeDetailsAsString(searchScrollRequest));
-  }
-
-  public ClearScrollResponse clearScroll(ClearScrollRequest clearScrollRequest) {
-    return execute(() -> restHighLevelClient.clearScroll(clearScrollRequest, RequestOptions.DEFAULT));
-  }
-
-  public DeleteResponse delete(DeleteRequest deleteRequest) {
-    return execute(() -> restHighLevelClient.delete(deleteRequest, RequestOptions.DEFAULT),
-      () -> computeDetailsAsString(deleteRequest));
-  }
-
-  public RefreshResponse refresh(Index... indices) {
-    RefreshRequest refreshRequest = new RefreshRequest()
-      .indices(Arrays.stream(indices).map(Index::getName).toArray(String[]::new));
-    return execute(() -> restHighLevelClient.indices().refresh(refreshRequest, RequestOptions.DEFAULT),
-      () -> computeDetailsAsString(refreshRequest));
-  }
-
-  public ForceMergeResponse forcemerge(ForceMergeRequest forceMergeRequest) {
-    return execute(() -> restHighLevelClient.indices().forcemerge(forceMergeRequest, RequestOptions.DEFAULT));
-  }
-
-  public AcknowledgedResponse putSettings(UpdateSettingsRequest req) {
-    return execute(() -> restHighLevelClient.indices().putSettings(req, RequestOptions.DEFAULT));
-  }
-
-  public ClearIndicesCacheResponse clearCache(ClearIndicesCacheRequest request) {
-    return execute(() -> restHighLevelClient.indices().clearCache(request, RequestOptions.DEFAULT),
-      () -> computeDetailsAsString(request));
-  }
-
-  public IndexResponse index(IndexRequest indexRequest) {
-    return execute(() -> restHighLevelClient.index(indexRequest, RequestOptions.DEFAULT),
-      () -> computeDetailsAsString(indexRequest));
-  }
-
-  public GetResponse get(GetRequest request) {
-    return execute(() -> restHighLevelClient.get(request, RequestOptions.DEFAULT),
-      () -> computeDetailsAsString(request));
-  }
-
-  public GetIndexResponse getIndex(GetIndexRequest getRequest) {
-    return execute(() -> restHighLevelClient.indices().get(getRequest, RequestOptions.DEFAULT));
-  }
-
-  public boolean indexExists(GetIndexRequest getIndexRequest) {
-    return execute(() -> restHighLevelClient.indices().exists(getIndexRequest, RequestOptions.DEFAULT),
-      () -> computeDetailsAsString(getIndexRequest));
-  }
-
-  public CreateIndexResponse create(CreateIndexRequest createIndexRequest) {
-    return execute(() -> restHighLevelClient.indices().create(createIndexRequest, RequestOptions.DEFAULT),
-      () -> computeDetailsAsString(createIndexRequest));
-  }
-
-  public AcknowledgedResponse deleteIndex(DeleteIndexRequest deleteIndexRequest) {
-    return execute(() -> restHighLevelClient.indices().delete(deleteIndexRequest, RequestOptions.DEFAULT));
-  }
-
-  public AcknowledgedResponse putMapping(PutMappingRequest request) {
-    return execute(() -> restHighLevelClient.indices().putMapping(request, RequestOptions.DEFAULT),
-      () -> computeDetailsAsString(request));
-  }
-
-  public ClusterHealthResponse clusterHealth(ClusterHealthRequest clusterHealthRequest) {
-    return execute(() -> restHighLevelClient.cluster().health(clusterHealthRequest, RequestOptions.DEFAULT),
-      () -> computeDetailsAsString(clusterHealthRequest));
-  }
-
-  public void waitForStatus(ClusterHealthStatus clusterHealthStatus) {
-    clusterHealth(new ClusterHealthRequest().waitForEvents(Priority.LANGUID).waitForStatus(clusterHealthStatus));
-  }
-
-  // https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-stats.html
-  public NodeStatsResponse nodesStats() {
-    return execute(() -> {
-      Request request = new Request("GET", "/_nodes/stats/fs,process,jvm,indices,breaker");
-      Response response = restHighLevelClient.getLowLevelClient().performRequest(request);
-      return NodeStatsResponse.toNodeStatsResponse(gson.fromJson(EntityUtils.toString(response.getEntity()), JsonObject.class));
-    });
-  }
-
-  // https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-stats.html
-  public IndicesStatsResponse indicesStats(String... indices) {
-    return execute(() -> {
-      Request request = new Request("GET", "/" + (indices.length > 0 ? (String.join(",", indices) + "/") : "") + "_stats");
-      request.addParameter("level", "shards");
-      Response response = restHighLevelClient.getLowLevelClient().performRequest(request);
-      return IndicesStatsResponse.toIndicesStatsResponse(gson.fromJson(EntityUtils.toString(response.getEntity()), JsonObject.class));
-    }, () -> computeDetailsAsString(indices));
-  }
-
-  // https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-stats.html
-  public ClusterStatsResponse clusterStats() {
-    return execute(() -> {
-      Request request = new Request("GET", "/_cluster/stats");
-      Response response = restHighLevelClient.getLowLevelClient().performRequest(request);
-      return ClusterStatsResponse.toClusterStatsResponse(gson.fromJson(EntityUtils.toString(response.getEntity()), JsonObject.class));
-    });
-  }
-
-  public GetSettingsResponse getSettings(GetSettingsRequest getSettingsRequest) {
-    return execute(() -> restHighLevelClient.indices().getSettings(getSettingsRequest, RequestOptions.DEFAULT));
-  }
-
-  public GetMappingsResponse getMapping(GetMappingsRequest getMappingsRequest) {
-    return execute(() -> restHighLevelClient.indices().getMapping(getMappingsRequest, RequestOptions.DEFAULT));
-  }
-
-  @Override
-  public void close() {
-    try {
-      restHighLevelClient.close();
-    } catch (IOException e) {
-      throw new ElasticsearchException("Could not close ES Rest high level client", e);
-    }
-  }
-
-  /**
-   * Internal usage only
-   *
-   * @return native ES client object
-   */
-  RestHighLevelClient nativeClient() {
-    return restHighLevelClient;
-  }
-
-  static class MinimalRestHighLevelClient extends RestHighLevelClient {
-
-    public MinimalRestHighLevelClient(HttpHost... hosts) {
-      super(RestClient.builder(hosts));
+    public EsClient(HttpHost... hosts) {
+        this(new MinimalRestHighLevelClient(hosts));
     }
 
-    MinimalRestHighLevelClient(RestClient restClient) {
-      super(restClient, RestClient::close, Lists.newArrayList());
+    public EsClient(String user, String password, HttpHost... hosts) {
+        this(new MinimalRestHighLevelClient(user, password, hosts));
     }
-  }
 
-  <R> R execute(EsRequestExecutor<R> executor) {
-    return execute(executor, () -> "");
-  }
-
-  <R> R execute(EsRequestExecutor<R> executor, Supplier<String> requestDetails) {
-    Profiler profiler = Profiler.createIfTrace(EsClient.LOGGER).start();
-    try {
-      return executor.execute();
-    } catch (Exception e) {
-      throw new ElasticsearchException("Fail to execute es request" + requestDetails.get(), e);
-    } finally {
-      if (profiler.isTraceEnabled()) {
-        profiler.stopTrace(requestDetails.get());
-      }
+    EsClient(RestHighLevelClient restHighLevelClient) {
+        this.restHighLevelClient = restHighLevelClient;
+        this.gson = new GsonBuilder().create();
     }
-  }
 
-  @FunctionalInterface
-  interface EsRequestExecutor<R> {
-    R execute() throws IOException;
-  }
+    public BulkResponse bulk(BulkRequest bulkRequest) {
+        LOGGER.info("--- EsClient.bulk");
+        return execute(() -> restHighLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT));
+    }
+
+    public Cancellable bulkAsync(BulkRequest bulkRequest, ActionListener<BulkResponse> listener) {
+        LOGGER.info("--- EsClient.bulkAsync");
+        return restHighLevelClient.bulkAsync(bulkRequest, RequestOptions.DEFAULT, listener);
+    }
+
+    public static SearchRequest prepareSearch(String indexName) {
+        LOGGER.info("--- EsClient.prepareSearch");
+        return Requests.searchRequest(indexName);
+    }
+
+    public static SearchRequest prepareSearch(IndexType.IndexMainType mainType) {
+        LOGGER.info("--- EsClient.prepareSearch");
+        return Requests.searchRequest(mainType.getIndex().getName()).types(mainType.getType());
+    }
+
+    public static SearchRequest prepareSearch(String index, String type) {
+        LOGGER.info("--- EsClient.prepareSearch");
+        return Requests.searchRequest(index).types(type);
+    }
+
+    public SearchResponse search(SearchRequest searchRequest) {
+        LOGGER.info("--- EsClient.");
+        return execute(() -> restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT),
+                       () -> computeDetailsAsString(searchRequest));
+    }
+
+    public SearchResponse scroll(SearchScrollRequest searchScrollRequest) {
+        LOGGER.info("--- EsClient.scroll");
+        return execute(() -> restHighLevelClient.scroll(searchScrollRequest, RequestOptions.DEFAULT),
+                       () -> computeDetailsAsString(searchScrollRequest));
+    }
+
+    public ClearScrollResponse clearScroll(ClearScrollRequest clearScrollRequest) {
+        LOGGER.info("--- EsClient.clearScroll");
+        return execute(() -> restHighLevelClient.clearScroll(clearScrollRequest, RequestOptions.DEFAULT));
+    }
+
+    public DeleteResponse delete(DeleteRequest deleteRequest) {
+        LOGGER.info("--- EsClient.delete");
+        return execute(() -> restHighLevelClient.delete(deleteRequest, RequestOptions.DEFAULT),
+                       () -> computeDetailsAsString(deleteRequest));
+    }
+
+    public RefreshResponse refresh(Index... indices) {
+        LOGGER.info("--- EsClient.refresh");
+        RefreshRequest refreshRequest = new RefreshRequest()
+            .indices(Arrays.stream(indices).map(Index::getName).toArray(String[]::new));
+        return execute(() -> restHighLevelClient.indices().refresh(refreshRequest, RequestOptions.DEFAULT),
+                       () -> computeDetailsAsString(refreshRequest));
+    }
+
+    public ForceMergeResponse forcemerge(ForceMergeRequest forceMergeRequest) {
+        LOGGER.info("--- EsClient.forcemerge");
+        return execute(() -> restHighLevelClient.indices().forcemerge(forceMergeRequest, RequestOptions.DEFAULT));
+    }
+
+    public AcknowledgedResponse putSettings(UpdateSettingsRequest req) {
+        LOGGER.info("--- EsClient.putSettings");
+        return execute(() -> restHighLevelClient.indices().putSettings(req, RequestOptions.DEFAULT));
+    }
+
+    public ClearIndicesCacheResponse clearCache(ClearIndicesCacheRequest request) {
+        LOGGER.info("--- EsClient.clearCache");
+        return execute(() -> restHighLevelClient.indices().clearCache(request, RequestOptions.DEFAULT),
+                       () -> computeDetailsAsString(request));
+    }
+
+    public IndexResponse index(IndexRequest indexRequest) {
+        LOGGER.info("--- EsClient.index");
+        return execute(() -> restHighLevelClient.index(indexRequest, RequestOptions.DEFAULT),
+                       () -> computeDetailsAsString(indexRequest));
+    }
+
+    public GetResponse get(GetRequest request) {
+        LOGGER.info("--- EsClient.get");
+        return execute(() -> restHighLevelClient.get(request, RequestOptions.DEFAULT),
+                       () -> computeDetailsAsString(request));
+    }
+
+    public GetIndexResponse getIndex(GetIndexRequest getRequest) {
+        LOGGER.info("--- EsClient.");
+        return execute(() -> restHighLevelClient.indices().get(getRequest, RequestOptions.DEFAULT));
+    }
+
+    public boolean indexExists(GetIndexRequest getIndexRequest) {
+        LOGGER.info("--- EsClient.indexExists");
+        return execute(() -> restHighLevelClient.indices().exists(getIndexRequest, RequestOptions.DEFAULT),
+                       () -> computeDetailsAsString(getIndexRequest));
+    }
+
+    public CreateIndexResponse create(CreateIndexRequest createIndexRequest) {
+        LOGGER.info("--- EsClient.create");
+        return execute(() -> restHighLevelClient.indices().create(createIndexRequest, RequestOptions.DEFAULT),
+                       () -> computeDetailsAsString(createIndexRequest));
+    }
+
+    public AcknowledgedResponse deleteIndex(DeleteIndexRequest deleteIndexRequest) {
+        LOGGER.info("--- EsClient.deleteIndex");
+        return execute(() -> restHighLevelClient.indices().delete(deleteIndexRequest, RequestOptions.DEFAULT));
+    }
+
+    public AcknowledgedResponse putMapping(PutMappingRequest request) {
+        LOGGER.info("--- EsClient.putMapping");
+        return execute(() -> restHighLevelClient.indices().putMapping(request, RequestOptions.DEFAULT),
+                       () -> computeDetailsAsString(request));
+    }
+
+    public ClusterHealthResponse clusterHealth(ClusterHealthRequest clusterHealthRequest) {
+        LOGGER.info("--- EsClient.clusterHealth");
+        return execute(() -> restHighLevelClient.cluster().health(clusterHealthRequest, RequestOptions.DEFAULT),
+                       () -> computeDetailsAsString(clusterHealthRequest));
+    }
+
+    public void waitForStatus(ClusterHealthStatus clusterHealthStatus) {
+        LOGGER.info("--- EsClient.waitForStatus");
+        clusterHealth(new ClusterHealthRequest()
+                      .waitForEvents(Priority.LANGUID)
+                      .waitForStatus(clusterHealthStatus));
+    }
+
+    // https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-stats.html
+    public NodeStatsResponse nodesStats() {
+        LOGGER.info("--- EsClient.nodesStats");
+        return execute(() -> {
+                Request request = new Request("GET", "/_nodes/stats/fs,process,jvm,indices,breaker");
+                Response response = restHighLevelClient.getLowLevelClient().performRequest(request);
+                return NodeStatsResponse.toNodeStatsResponse(gson
+                                                             .fromJson(EntityUtils.toString(response.getEntity()),
+                                                                       JsonObject.class));
+            });
+    }
+
+    // https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-stats.html
+    public IndicesStatsResponse indicesStats(String... indices) {
+        LOGGER.info("--- EsClient.indicesStats");
+        return execute(() -> {
+                Request request = new Request("GET", "/" +
+                                              (indices.length > 0 ? (String.join(",", indices) + "/") : "") +
+                                              "_stats");
+                request.addParameter("level", "shards");
+                Response response = restHighLevelClient
+                    .getLowLevelClient()
+                    .performRequest(request);
+                return IndicesStatsResponse
+                    .toIndicesStatsResponse(gson
+                                            .fromJson(EntityUtils.toString(response.getEntity()),
+                                                      JsonObject.class));
+            }, () -> computeDetailsAsString(indices));
+    }
+
+    // https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-stats.html
+    public ClusterStatsResponse clusterStats() {
+        LOGGER.info("--- EsClient.clusterStats");
+        return execute(() -> {
+                Request request = new Request("GET", "/_cluster/stats");
+                Response response = restHighLevelClient.getLowLevelClient().performRequest(request);
+                return ClusterStatsResponse
+                    .toClusterStatsResponse(gson
+                                            .fromJson(EntityUtils.toString(response.getEntity()),
+                                                      JsonObject.class));
+            });
+    }
+
+    public GetSettingsResponse getSettings(GetSettingsRequest getSettingsRequest) {
+        LOGGER.info("--- EsClient.getSettings");
+        return execute(() -> restHighLevelClient
+                       .indices()
+                       .getSettings(getSettingsRequest, RequestOptions.DEFAULT));
+    }
+
+    public GetMappingsResponse getMapping(GetMappingsRequest getMappingsRequest) {
+        LOGGER.info("--- EsClient.getMapping");
+        return execute(() -> restHighLevelClient
+                       .indices()
+                       .getMapping(getMappingsRequest, RequestOptions.DEFAULT));
+    }
+
+    @Override
+    public void close() {
+        try {
+            restHighLevelClient.close();
+        } catch (IOException e) {
+            throw new ElasticsearchException("Could not close ES Rest high level client", e);
+        }
+    }
+
+    /**
+     * Internal usage only
+     *
+     * @return native ES client object
+     */
+    RestHighLevelClient nativeClient() {
+        return restHighLevelClient;
+    }
+
+    static class MinimalRestHighLevelClient extends RestHighLevelClient {
+
+        public MinimalRestHighLevelClient(HttpHost... hosts) {
+            super(RestClient.builder(hosts));
+        }
+
+        public MinimalRestHighLevelClient(String user, String password, HttpHost... hosts) {
+            super(RestClient
+                  .builder(hosts)
+                  .setHttpClientConfigCallback(builder -> {
+                          CredentialsProvider provider = new BasicCredentialsProvider();
+                          provider.setCredentials(AuthScope.ANY,
+                                                  new UsernamePasswordCredentials(user, password));
+                          return builder
+                              .disableAuthCaching()
+                              .setDefaultCredentialsProvider(provider);
+                      }));
+        }
+
+        MinimalRestHighLevelClient(RestClient restClient) {
+            super(restClient, RestClient::close, Lists.newArrayList());
+        }
+    }
+
+    <R> R execute(EsRequestExecutor<R> executor) {
+        return execute(executor, () -> "");
+    }
+
+    <R> R execute(EsRequestExecutor<R> executor, Supplier<String> requestDetails) {
+        Profiler profiler = Profiler.createIfTrace(EsClient.LOGGER).start();
+        try {
+            return executor.execute();
+        } catch (Exception e) {
+            throw new ElasticsearchException("Fail to execute es request" + requestDetails.get(), e);
+        } finally {
+            if (profiler.isTraceEnabled()) {
+                profiler.stopTrace(requestDetails.get());
+            }
+        }
+    }
+
+    @FunctionalInterface
+    interface EsRequestExecutor<R> {
+        R execute() throws IOException;
+    }
 
 }

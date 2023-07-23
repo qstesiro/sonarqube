@@ -19,36 +19,70 @@
  */
 package org.sonar.ce.configuration;
 
+import org.sonar.api.config.Configuration;
+
+import static org.sonar.process.ProcessProperties.Property.CE_WORKER_COUNT;
+import static org.sonar.process.ProcessProperties.Property.CE_CORE_MULTIPLE;
+
 /**
  * When an implementation of this interface is available in Pico, the Compute Engine will use the value returned by
  * {@link #get()} as the number of worker the Compute Engine should run on.
  */
 public class WorkerCountProviderImpl implements WorkerCountProvider {
 
+    private final Configuration config;
+
+    public WorkerCountProviderImpl() {
+        config = null;
+    }
+
+    public WorkerCountProviderImpl(Configuration config) {
+        this.config = config;
+    }
+
     private static final String WORKER_COUNT = "SONAR_WORKER_COUNT";
 
     @Override
     public int get() {
-        try {
-            return Integer.parseInt(System.getenv(WORKER_COUNT));
-        } catch(NumberFormatException e) {
-            return getWorkers();
+        if (config != null) {
+            int value = config.getInt(CE_WORKER_COUNT.getKey()).orElse(0);
+            if (value == 0) {
+                value = getWorkers();
+            }
+            return value;
+        } else {
+            try {
+                return Integer.parseInt(System.getenv(WORKER_COUNT));
+            } catch(NumberFormatException e) {
+                return getWorkers();
+            }
         }
     }
 
-    private static final String CORE_MUL = "SONAR_CORE_MUL";
-    private static final int CORE_MUL_DEF = 1;
-    private static final int CORE_MUL_MAX = 3;
+    private static final String CORE_MULTIPLE = "SONAR_CORE_MULTIPLE";
+
+    private static final int CORE_MULTIPLE_DEF = 1;
+    private static final int CORE_MULTIPLE_MAX = 3;
 
     private int getWorkers() {
-        int mul = CORE_MUL_DEF;
-        try {
-            mul = Integer.parseInt(System.getenv(CORE_MUL));
-            if (mul < CORE_MUL_DEF || mul > CORE_MUL_MAX) {
-                mul = CORE_MUL_DEF;
+        if (config != null) {
+            int value = config.getInt(CE_CORE_MULTIPLE.getKey()).orElse(0);
+            if (value < CORE_MULTIPLE_DEF || value > CORE_MULTIPLE_MAX) {
+                value = CORE_MULTIPLE_DEF;
             }
-        } catch(NumberFormatException e) {
+            return Runtime.getRuntime().availableProcessors() * value;
+        } else {
+            int value = CORE_MULTIPLE_DEF;
+            try {
+                value = Integer.parseInt(System.getenv(CORE_MULTIPLE));
+                if (value < CORE_MULTIPLE_DEF || value > CORE_MULTIPLE_MAX) {
+                    value = CORE_MULTIPLE_DEF;
+                }
+                return Runtime.getRuntime().availableProcessors() * value;
+            } catch(NumberFormatException e) {
+                value = CORE_MULTIPLE_DEF;
+            }
+            return Runtime.getRuntime().availableProcessors() * value;
         }
-        return Runtime.getRuntime().availableProcessors() * mul;
     }
 }

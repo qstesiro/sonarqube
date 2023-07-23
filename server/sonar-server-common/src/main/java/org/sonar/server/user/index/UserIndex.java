@@ -56,66 +56,66 @@ import static org.sonar.server.user.index.UserIndexDefinition.FIELD_SCM_ACCOUNTS
 @ComputeEngineSide
 public class UserIndex {
 
-  private final EsClient esClient;
-  private final System2 system2;
+    private final EsClient esClient;
+    private final System2 system2;
 
-  public UserIndex(EsClient esClient, System2 system2) {
-    this.esClient = esClient;
-    this.system2 = system2;
-  }
-
-  /**
-   * Returns the active users (at most 3) who are associated to the given SCM account. This method can be used
-   * to detect user conflicts.
-   */
-  public List<UserDoc> getAtMostThreeActiveUsersForScmAccount(String scmAccount) {
-    List<UserDoc> result = new ArrayList<>();
-    if (!StringUtils.isEmpty(scmAccount)) {
-      SearchResponse response = esClient.search(EsClient.prepareSearch(UserIndexDefinition.TYPE_USER)
-        .source(new SearchSourceBuilder()
-          .query(boolQuery().must(matchAllQuery()).filter(
-            boolQuery()
-              .must(termQuery(FIELD_ACTIVE, true))
-              .should(termQuery(FIELD_LOGIN, scmAccount))
-              .should(matchQuery(SORTABLE_ANALYZER.subField(FIELD_EMAIL), scmAccount))
-              .should(matchQuery(SORTABLE_ANALYZER.subField(FIELD_SCM_ACCOUNTS), scmAccount))
-              .minimumShouldMatch(1)))
-          .size(3)));
-      for (SearchHit hit : response.getHits().getHits()) {
-        result.add(new UserDoc(hit.getSourceAsMap()));
-      }
-    }
-    return result;
-  }
-
-  public SearchResult<UserDoc> search(UserQuery userQuery, SearchOptions options) {
-    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
-      .size(options.getLimit())
-      .from(options.getOffset())
-      .sort(FIELD_NAME, SortOrder.ASC);
-
-    BoolQueryBuilder filter = boolQuery().must(termQuery(FIELD_ACTIVE, true));
-    userQuery.getOrganizationUuid()
-      .ifPresent(o -> filter.must(termQuery(FIELD_ORGANIZATION_UUIDS, o)));
-    userQuery.getExcludedOrganizationUuid()
-      .ifPresent(o -> filter.mustNot(termQuery(FIELD_ORGANIZATION_UUIDS, o)));
-
-    QueryBuilder esQuery = matchAllQuery();
-    Optional<String> textQuery = userQuery.getTextQuery();
-    if (textQuery.isPresent()) {
-      esQuery = QueryBuilders.multiMatchQuery(textQuery.get(),
-        FIELD_LOGIN,
-        USER_SEARCH_GRAMS_ANALYZER.subField(FIELD_LOGIN),
-        FIELD_NAME,
-        USER_SEARCH_GRAMS_ANALYZER.subField(FIELD_NAME),
-        FIELD_EMAIL,
-        USER_SEARCH_GRAMS_ANALYZER.subField(FIELD_EMAIL))
-        .operator(Operator.AND);
+    public UserIndex(EsClient esClient, System2 system2) {
+        this.esClient = esClient;
+        this.system2 = system2;
     }
 
-    SearchRequest request = EsClient.prepareSearch(UserIndexDefinition.TYPE_USER)
-      .source(searchSourceBuilder.query(boolQuery().must(esQuery).filter(filter)));
-    return new SearchResult<>(esClient.search(request), UserDoc::new, system2.getDefaultTimeZone().toZoneId());
-  }
+    /**
+     * Returns the active users (at most 3) who are associated to the given SCM account. This method can be used
+     * to detect user conflicts.
+     */
+    public List<UserDoc> getAtMostThreeActiveUsersForScmAccount(String scmAccount) {
+        List<UserDoc> result = new ArrayList<>();
+        if (!StringUtils.isEmpty(scmAccount)) {
+            SearchResponse response = esClient.search(EsClient.prepareSearch(UserIndexDefinition.TYPE_USER)
+                                                      .source(new SearchSourceBuilder()
+                                                              .query(boolQuery().must(matchAllQuery()).filter(
+                                                                         boolQuery()
+                                                                         .must(termQuery(FIELD_ACTIVE, true))
+                                                                         .should(termQuery(FIELD_LOGIN, scmAccount))
+                                                                         .should(matchQuery(SORTABLE_ANALYZER.subField(FIELD_EMAIL), scmAccount))
+                                                                         .should(matchQuery(SORTABLE_ANALYZER.subField(FIELD_SCM_ACCOUNTS), scmAccount))
+                                                                         .minimumShouldMatch(1)))
+                                                              .size(3)));
+            for (SearchHit hit : response.getHits().getHits()) {
+                result.add(new UserDoc(hit.getSourceAsMap()));
+            }
+        }
+        return result;
+    }
+
+    public SearchResult<UserDoc> search(UserQuery userQuery, SearchOptions options) {
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder()
+            .size(options.getLimit())
+            .from(options.getOffset())
+            .sort(FIELD_NAME, SortOrder.ASC);
+
+        BoolQueryBuilder filter = boolQuery().must(termQuery(FIELD_ACTIVE, true));
+        userQuery.getOrganizationUuid()
+            .ifPresent(o -> filter.must(termQuery(FIELD_ORGANIZATION_UUIDS, o)));
+        userQuery.getExcludedOrganizationUuid()
+            .ifPresent(o -> filter.mustNot(termQuery(FIELD_ORGANIZATION_UUIDS, o)));
+
+        QueryBuilder esQuery = matchAllQuery();
+        Optional<String> textQuery = userQuery.getTextQuery();
+        if (textQuery.isPresent()) {
+            esQuery = QueryBuilders.multiMatchQuery(textQuery.get(),
+                                                    FIELD_LOGIN,
+                                                    USER_SEARCH_GRAMS_ANALYZER.subField(FIELD_LOGIN),
+                                                    FIELD_NAME,
+                                                    USER_SEARCH_GRAMS_ANALYZER.subField(FIELD_NAME),
+                                                    FIELD_EMAIL,
+                                                    USER_SEARCH_GRAMS_ANALYZER.subField(FIELD_EMAIL))
+                .operator(Operator.AND);
+        }
+
+        SearchRequest request = EsClient.prepareSearch(UserIndexDefinition.TYPE_USER)
+            .source(searchSourceBuilder.query(boolQuery().must(esQuery).filter(filter)));
+        return new SearchResult<>(esClient.search(request), UserDoc::new, system2.getDefaultTimeZone().toZoneId());
+    }
 
 }

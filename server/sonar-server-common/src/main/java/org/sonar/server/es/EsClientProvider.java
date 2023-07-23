@@ -25,6 +25,7 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 import java.util.stream.Collectors;
 import org.apache.http.HttpHost;
 import org.elasticsearch.common.settings.Settings;
@@ -43,59 +44,77 @@ import static org.sonar.process.ProcessProperties.Property.CLUSTER_SEARCH_HOSTS;
 import static org.sonar.process.ProcessProperties.Property.SEARCH_HOST;
 import static org.sonar.process.ProcessProperties.Property.SEARCH_PORT;
 import static org.sonar.process.cluster.NodeType.SEARCH;
+import static org.sonar.process.ProcessProperties.Property.ELASTIC_HOST;
+import static org.sonar.process.ProcessProperties.Property.ELASTIC_PORT;
+import static org.sonar.process.ProcessProperties.Property.ELASTIC_USER;
+import static org.sonar.process.ProcessProperties.Property.ELASTIC_PASSWORD;
 
 @ComputeEngineSide
 @ServerSide
 public class EsClientProvider extends ProviderAdapter {
 
-  private static final Logger LOGGER = Loggers.get(EsClientProvider.class);
+    private static final Logger LOGGER = Loggers.get(EsClientProvider.class);
 
-  private EsClient cache;
+    private EsClient cache;
 
-  public EsClient provide(Configuration config) {
-    if (cache == null) {
-      Settings.Builder esSettings = Settings.builder();
-
-      // mandatory property defined by bootstrap process
-      esSettings.put("cluster.name", config.get(CLUSTER_NAME.getKey()).get());
-
-      boolean clusterEnabled = config.getBoolean(CLUSTER_ENABLED.getKey()).orElse(false);
-      boolean searchNode = !clusterEnabled || SEARCH.equals(NodeType.parse(config.get(CLUSTER_NODE_TYPE.getKey()).orElse(null)));
-      List<HttpHost> httpHosts;
-      if (clusterEnabled && !searchNode) {
-        httpHosts = getHttpHosts(config);
-
-        LOGGER.info("Connected to remote Elasticsearch: [{}]", displayedAddresses(httpHosts));
-      } else {
-        //defaults provided in:
-        // * in org.sonar.process.ProcessProperties.Property.SEARCH_HOST
-        // * in org.sonar.process.ProcessProperties.Property.SEARCH_PORT
-        HostAndPort host = HostAndPort.fromParts(config.get(SEARCH_HOST.getKey()).get(), config.getInt(SEARCH_PORT.getKey()).get());
-        httpHosts = Collections.singletonList(toHttpHost(host));
-        LOGGER.info("Connected to local Elasticsearch: [{}]", displayedAddresses(httpHosts));
-      }
-
-      cache = new EsClient(httpHosts.toArray(new HttpHost[0]));
+    public EsClient provide(Configuration config) {
+        if (cache == null) {
+            Settings.Builder esSettings = Settings.builder();
+            // mandatory property defined by bootstrap process
+            esSettings.put("cluster.name", config.get(CLUSTER_NAME.getKey()).get());
+            boolean clusterEnabled = config.getBoolean(CLUSTER_ENABLED.getKey()).orElse(false);
+            boolean searchNode = !clusterEnabled ||
+                SEARCH.equals(NodeType.parse(config.get(CLUSTER_NODE_TYPE.getKey()).orElse(null)));
+            List<HttpHost> httpHosts;
+            if (clusterEnabled && !searchNode) {
+                httpHosts = getHttpHosts(config);
+                LOGGER.info("Connected to remote Elasticsearch: [{}]", displayedAddresses(httpHosts));
+            } else {
+                //defaults provided in:
+                // * in org.sonar.process.ProcessProperties.Property.SEARCH_HOST
+                // * in org.sonar.process.ProcessProperties.Property.SEARCH_PORT
+                if (!isExternalElastic(config)) {
+                    HostAndPort host = HostAndPort.fromParts(config.get(SEARCH_HOST.getKey()).get(),
+                                                             config.getInt(SEARCH_PORT.getKey()).get());
+                    httpHosts = Collections.singletonList(toHttpHost(host));
+                    cache = new EsClient(httpHosts.toArray(new HttpHost[0]));
+                } else {
+                    HostAndPort host = HostAndPort.fromParts(config.get(ELASTIC_HOST.getKey()).get(),
+                                                             config.getInt(ELASTIC_PORT.getKey()).get());
+                    httpHosts = Collections.singletonList(toHttpHost(host));
+                    cache = new EsClient(config.get(ELASTIC_USER.getKey()).get(),
+                                         config.get(ELASTIC_PASSWORD.getKey()).get(),
+                                         httpHosts.toArray(new HttpHost[0]));
+                }
+                LOGGER.info("--- Connected to local Elasticsearch: [{}]", displayedAddresses(httpHosts));
+            }
+        }
+        return cache;
     }
-    return cache;
-  }
 
-  private static List<HttpHost> getHttpHosts(Configuration config) {
-    return Arrays.stream(config.getStringArray(CLUSTER_SEARCH_HOSTS.getKey()))
-      .map(HostAndPort::fromString)
-      .map(EsClientProvider::toHttpHost)
-      .collect(Collectors.toList());
-  }
-
-  private static HttpHost toHttpHost(HostAndPort host) {
-    try {
-      return new HttpHost(InetAddress.getByName(host.getHost()), host.getPortOrDefault(9001));
-    } catch (UnknownHostException e) {
-      throw new IllegalStateException("Can not resolve host [" + host + "]", e);
+    private boolean isExternalElastic(Configuration config) {
+        return config.get(ELASTIC_HOST.getKey()).orElse(null) != null &&
+            config.getInt(ELASTIC_PORT.getKey()).orElse(0) != 0 &&
+            config.get(ELASTIC_USER.getKey()).orElse(null) != null &&
+            config.get(ELASTIC_PASSWORD.getKey()).orElse(null) != null;
     }
-  }
 
-  private static String displayedAddresses(List<HttpHost> httpHosts) {
-    return httpHosts.stream().map(HttpHost::toString).collect(Collectors.joining(", "));
-  }
+    private static List<HttpHost> getHttpHosts(Configuration config) {
+        return Arrays.stream(config.getStringArray(CLUSTER_SEARCH_HOSTS.getKey()))
+            .map(HostAndPort::fromString)
+            .map(EsClientProvider::toHttpHost)
+            .collect(Collectors.toList());
+    }
+
+    private static HttpHost toHttpHost(HostAndPort host) {
+        try {
+            return new HttpHost(InetAddress.getByName(host.getHost()), host.getPortOrDefault(9001));
+        } catch (UnknownHostException e) {
+            throw new IllegalStateException("Can not resolve host [" + host + "]", e);
+        }
+    }
+
+    private static String displayedAddresses(List<HttpHost> httpHosts) {
+        return httpHosts.stream().map(HttpHost::toString).collect(Collectors.joining(", "));
+    }
 }

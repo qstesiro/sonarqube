@@ -228,25 +228,26 @@ public class CeWorkerImpl implements CeWorker {
         public void run() {
             beforeExecute();
             LOG.info("--- component: {}", task.getComponent().toString());
-            Optional<CeTask.Component> component = task.getComponent();
-            if (component.isPresent()) {
-                LOG.info("--- component.key {}", component.get().getKey());
-                final String key = component.get().getKey().get();
-                if (key.equals("console:wuxing-cs") ||
-                    key.equals("console.wuxing-cs")) {
-                    final long seconds = 300;
-                    LOG.info("--- simulate time-consuming task enter {}s, threadId: {}",
-                             seconds, Thread.currentThread().getId());
-                    try {
-                        Thread.sleep(seconds * 1000L);
-                    } catch (Exception e) {
-                        LOG.info("{}", e);
-                    } finally {
-                        LOG.info("--- simulate time-consuming task leave {}s, threadId: {}",
-                             seconds, Thread.currentThread().getId());
-                    }
-                }
-            }
+            // ???
+            // Optional<CeTask.Component> component = task.getComponent();
+            // if (component.isPresent()) {
+            //     LOG.info("--- component.key {}", component.get().getKey());
+            //     final String key = component.get().getKey().get();
+            //     if (key.equals("console:wuxing-cs") ||
+            //         key.equals("console.wuxing-cs")) {
+            //         final long seconds = 300;
+            //         LOG.info("--- simulate time-consuming task enter {}s, threadId: {}",
+            //                  seconds, Thread.currentThread().getId());
+            //         try {
+            //             Thread.sleep(seconds * 1000L);
+            //         } catch (Exception e) {
+            //             LOG.info("{}", e);
+            //         } finally {
+            //             LOG.info("--- simulate time-consuming task leave {}s, threadId: {}",
+            //                  seconds, Thread.currentThread().getId());
+            //         }
+            //     }
+            // }
             executeTask();
         }
 

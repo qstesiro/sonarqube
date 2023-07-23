@@ -24,7 +24,8 @@ if (project.hasProperty('time-tracker')) {
 
 
 if (!JavaVersion.current().java11Compatible) {
-    throw new GradleException("JDK 11+ is required to perform this build. It's currently " + System.getProperty("java.home") + ".")
+    throw new GradleException("JDK 11+ is required to perform this build. It's currently " +
+                              System.getProperty("java.home") + ".")
 }
 
 apply plugin: 'org.owasp.dependencycheck'
@@ -72,7 +73,8 @@ allprojects {
         ext.versionWithoutBuildNumber = version
     } else {
         ext.versionWithoutBuildNumber = version
-        version = (version.toString().count('.') == 1 ? "${version}.0.${ext.buildNumber}" : "${version}.${ext.buildNumber}").toString()
+        version = (version.toString().count('.') == 1 ? "${version}.0.${ext.buildNumber}" :
+                   "${version}.${ext.buildNumber}").toString()
     }
 
     ext {
