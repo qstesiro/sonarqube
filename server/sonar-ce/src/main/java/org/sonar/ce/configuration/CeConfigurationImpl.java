@@ -67,8 +67,8 @@ public class CeConfigurationImpl implements CeConfiguration {
 
     public CeConfigurationImpl(Configuration configuration, @Nullable WorkerCountProvider workerCountProvider) {
         // ???
-        Stream.of(Thread.currentThread().getStackTrace())
-            .forEach(e -> LOG.info("--- CeConfigurationImpl - {}", e));
+        // Stream.of(Thread.currentThread().getStackTrace())
+        //     .forEach(e -> LOG.info("--- CeConfigurationImpl - {}", e));
         this.workerCountProvider = workerCountProvider;
         this.gracefulStopTimeoutInMs = configuration.getLong(CE_GRACEFUL_STOP_TIMEOUT.getKey())
             .orElse(Long.parseLong(CE_GRACEFUL_STOP_TIMEOUT.getDefaultValue()));

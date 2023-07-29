@@ -111,55 +111,55 @@ public class EsClient implements Closeable {
     }
 
     public BulkResponse bulk(BulkRequest bulkRequest) {
-        LOGGER.info("--- EsClient.bulk");
+        // LOGGER.info("--- EsClient.bulk");
         return execute(() -> restHighLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT));
     }
 
     public Cancellable bulkAsync(BulkRequest bulkRequest, ActionListener<BulkResponse> listener) {
-        LOGGER.info("--- EsClient.bulkAsync");
+        // LOGGER.info("--- EsClient.bulkAsync");
         return restHighLevelClient.bulkAsync(bulkRequest, RequestOptions.DEFAULT, listener);
     }
 
     public static SearchRequest prepareSearch(String indexName) {
-        LOGGER.info("--- EsClient.prepareSearch");
+        // LOGGER.info("--- EsClient.prepareSearch");
         return Requests.searchRequest(indexName);
     }
 
     public static SearchRequest prepareSearch(IndexType.IndexMainType mainType) {
-        LOGGER.info("--- EsClient.prepareSearch");
+        // LOGGER.info("--- EsClient.prepareSearch");
         return Requests.searchRequest(mainType.getIndex().getName()).types(mainType.getType());
     }
 
     public static SearchRequest prepareSearch(String index, String type) {
-        LOGGER.info("--- EsClient.prepareSearch");
+        // LOGGER.info("--- EsClient.prepareSearch");
         return Requests.searchRequest(index).types(type);
     }
 
     public SearchResponse search(SearchRequest searchRequest) {
-        LOGGER.info("--- EsClient.");
+        // LOGGER.info("--- EsClient.");
         return execute(() -> restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT),
                        () -> computeDetailsAsString(searchRequest));
     }
 
     public SearchResponse scroll(SearchScrollRequest searchScrollRequest) {
-        LOGGER.info("--- EsClient.scroll");
+        // LOGGER.info("--- EsClient.scroll");
         return execute(() -> restHighLevelClient.scroll(searchScrollRequest, RequestOptions.DEFAULT),
                        () -> computeDetailsAsString(searchScrollRequest));
     }
 
     public ClearScrollResponse clearScroll(ClearScrollRequest clearScrollRequest) {
-        LOGGER.info("--- EsClient.clearScroll");
+        // LOGGER.info("--- EsClient.clearScroll");
         return execute(() -> restHighLevelClient.clearScroll(clearScrollRequest, RequestOptions.DEFAULT));
     }
 
     public DeleteResponse delete(DeleteRequest deleteRequest) {
-        LOGGER.info("--- EsClient.delete");
+        // LOGGER.info("--- EsClient.delete");
         return execute(() -> restHighLevelClient.delete(deleteRequest, RequestOptions.DEFAULT),
                        () -> computeDetailsAsString(deleteRequest));
     }
 
     public RefreshResponse refresh(Index... indices) {
-        LOGGER.info("--- EsClient.refresh");
+        // LOGGER.info("--- EsClient.refresh");
         RefreshRequest refreshRequest = new RefreshRequest()
             .indices(Arrays.stream(indices).map(Index::getName).toArray(String[]::new));
         return execute(() -> restHighLevelClient.indices().refresh(refreshRequest, RequestOptions.DEFAULT),
@@ -167,69 +167,69 @@ public class EsClient implements Closeable {
     }
 
     public ForceMergeResponse forcemerge(ForceMergeRequest forceMergeRequest) {
-        LOGGER.info("--- EsClient.forcemerge");
+        // LOGGER.info("--- EsClient.forcemerge");
         return execute(() -> restHighLevelClient.indices().forcemerge(forceMergeRequest, RequestOptions.DEFAULT));
     }
 
     public AcknowledgedResponse putSettings(UpdateSettingsRequest req) {
-        LOGGER.info("--- EsClient.putSettings");
+        // LOGGER.info("--- EsClient.putSettings");
         return execute(() -> restHighLevelClient.indices().putSettings(req, RequestOptions.DEFAULT));
     }
 
     public ClearIndicesCacheResponse clearCache(ClearIndicesCacheRequest request) {
-        LOGGER.info("--- EsClient.clearCache");
+        // LOGGER.info("--- EsClient.clearCache");
         return execute(() -> restHighLevelClient.indices().clearCache(request, RequestOptions.DEFAULT),
                        () -> computeDetailsAsString(request));
     }
 
     public IndexResponse index(IndexRequest indexRequest) {
-        LOGGER.info("--- EsClient.index");
+        // LOGGER.info("--- EsClient.index");
         return execute(() -> restHighLevelClient.index(indexRequest, RequestOptions.DEFAULT),
                        () -> computeDetailsAsString(indexRequest));
     }
 
     public GetResponse get(GetRequest request) {
-        LOGGER.info("--- EsClient.get");
+        // LOGGER.info("--- EsClient.get");
         return execute(() -> restHighLevelClient.get(request, RequestOptions.DEFAULT),
                        () -> computeDetailsAsString(request));
     }
 
     public GetIndexResponse getIndex(GetIndexRequest getRequest) {
-        LOGGER.info("--- EsClient.");
+        // LOGGER.info("--- EsClient.");
         return execute(() -> restHighLevelClient.indices().get(getRequest, RequestOptions.DEFAULT));
     }
 
     public boolean indexExists(GetIndexRequest getIndexRequest) {
-        LOGGER.info("--- EsClient.indexExists");
+        // LOGGER.info("--- EsClient.indexExists");
         return execute(() -> restHighLevelClient.indices().exists(getIndexRequest, RequestOptions.DEFAULT),
                        () -> computeDetailsAsString(getIndexRequest));
     }
 
     public CreateIndexResponse create(CreateIndexRequest createIndexRequest) {
-        LOGGER.info("--- EsClient.create");
+        // LOGGER.info("--- EsClient.create");
         return execute(() -> restHighLevelClient.indices().create(createIndexRequest, RequestOptions.DEFAULT),
                        () -> computeDetailsAsString(createIndexRequest));
     }
 
     public AcknowledgedResponse deleteIndex(DeleteIndexRequest deleteIndexRequest) {
-        LOGGER.info("--- EsClient.deleteIndex");
+        // LOGGER.info("--- EsClient.deleteIndex");
         return execute(() -> restHighLevelClient.indices().delete(deleteIndexRequest, RequestOptions.DEFAULT));
     }
 
     public AcknowledgedResponse putMapping(PutMappingRequest request) {
-        LOGGER.info("--- EsClient.putMapping");
+        // LOGGER.info("--- EsClient.putMapping");
         return execute(() -> restHighLevelClient.indices().putMapping(request, RequestOptions.DEFAULT),
                        () -> computeDetailsAsString(request));
     }
 
     public ClusterHealthResponse clusterHealth(ClusterHealthRequest clusterHealthRequest) {
-        LOGGER.info("--- EsClient.clusterHealth");
+        // LOGGER.info("--- EsClient.clusterHealth");
         return execute(() -> restHighLevelClient.cluster().health(clusterHealthRequest, RequestOptions.DEFAULT),
                        () -> computeDetailsAsString(clusterHealthRequest));
     }
 
     public void waitForStatus(ClusterHealthStatus clusterHealthStatus) {
-        LOGGER.info("--- EsClient.waitForStatus");
+        // LOGGER.info("--- EsClient.waitForStatus");
         clusterHealth(new ClusterHealthRequest()
                       .waitForEvents(Priority.LANGUID)
                       .waitForStatus(clusterHealthStatus));
@@ -237,7 +237,7 @@ public class EsClient implements Closeable {
 
     // https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-nodes-stats.html
     public NodeStatsResponse nodesStats() {
-        LOGGER.info("--- EsClient.nodesStats");
+        // LOGGER.info("--- EsClient.nodesStats");
         return execute(() -> {
                 Request request = new Request("GET", "/_nodes/stats/fs,process,jvm,indices,breaker");
                 Response response = restHighLevelClient.getLowLevelClient().performRequest(request);
@@ -249,7 +249,7 @@ public class EsClient implements Closeable {
 
     // https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-stats.html
     public IndicesStatsResponse indicesStats(String... indices) {
-        LOGGER.info("--- EsClient.indicesStats");
+        // LOGGER.info("--- EsClient.indicesStats");
         return execute(() -> {
                 Request request = new Request("GET", "/" +
                                               (indices.length > 0 ? (String.join(",", indices) + "/") : "") +
@@ -267,7 +267,7 @@ public class EsClient implements Closeable {
 
     // https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-stats.html
     public ClusterStatsResponse clusterStats() {
-        LOGGER.info("--- EsClient.clusterStats");
+        // LOGGER.info("--- EsClient.clusterStats");
         return execute(() -> {
                 Request request = new Request("GET", "/_cluster/stats");
                 Response response = restHighLevelClient.getLowLevelClient().performRequest(request);
@@ -279,14 +279,14 @@ public class EsClient implements Closeable {
     }
 
     public GetSettingsResponse getSettings(GetSettingsRequest getSettingsRequest) {
-        LOGGER.info("--- EsClient.getSettings");
+        // LOGGER.info("--- EsClient.getSettings");
         return execute(() -> restHighLevelClient
                        .indices()
                        .getSettings(getSettingsRequest, RequestOptions.DEFAULT));
     }
 
     public GetMappingsResponse getMapping(GetMappingsRequest getMappingsRequest) {
-        LOGGER.info("--- EsClient.getMapping");
+        // LOGGER.info("--- EsClient.getMapping");
         return execute(() -> restHighLevelClient
                        .indices()
                        .getMapping(getMappingsRequest, RequestOptions.DEFAULT));

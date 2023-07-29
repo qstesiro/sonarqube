@@ -20,6 +20,8 @@
 package org.sonar.ce.configuration;
 
 import org.sonar.api.config.Configuration;
+import org.sonar.api.utils.log.Logger;
+import org.sonar.api.utils.log.Loggers;
 
 import static org.sonar.process.ProcessProperties.Property.CE_WORKER_COUNT;
 import static org.sonar.process.ProcessProperties.Property.CE_CORE_MULTIPLE;
@@ -29,6 +31,8 @@ import static org.sonar.process.ProcessProperties.Property.CE_CORE_MULTIPLE;
  * {@link #get()} as the number of worker the Compute Engine should run on.
  */
 public class WorkerCountProviderImpl implements WorkerCountProvider {
+
+    private static final Logger LOG = Loggers.get(WorkerCountProviderImpl.class);
 
     private final Configuration config;
 
@@ -45,6 +49,7 @@ public class WorkerCountProviderImpl implements WorkerCountProvider {
     @Override
     public int get() {
         if (config != null) {
+            // LOG.info("--- WorkerCountProviderImpl.get - config != null"); // ???
             int value = config.getInt(CE_WORKER_COUNT.getKey()).orElse(0);
             if (value == 0) {
                 value = getWorkers();
@@ -66,6 +71,7 @@ public class WorkerCountProviderImpl implements WorkerCountProvider {
 
     private int getWorkers() {
         if (config != null) {
+            // LOG.info("--- WorkerCountProviderImpl.getWorkers - config != null"); // ???
             int value = config.getInt(CE_CORE_MULTIPLE.getKey()).orElse(0);
             if (value < CORE_MULTIPLE_DEF || value > CORE_MULTIPLE_MAX) {
                 value = CORE_MULTIPLE_DEF;

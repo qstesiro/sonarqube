@@ -47,13 +47,16 @@ public class WorkerCountAction implements CeWsAction {
 
     public WorkerCountAction(UserSession userSession, @Nullable WorkerCountProvider workerCountProvider) {
         // ???
-        Stream.of(Thread.currentThread().getStackTrace())
-            .forEach(e -> LOG.info("--- WorkerCountAction - {}", e));
+        // Stream.of(Thread.currentThread().getStackTrace())
+        //     .forEach(e -> LOG.info("--- WorkerCountAction - {}", e));
         this.userSession = userSession;
         this.workerCountProvider = workerCountProvider;
     }
 
     public WorkerCountAction(UserSession userSession) {
+        // ???
+        // 此处处理并不合理,正常应该获取Configuration对象传入
+        // CeConfigurationImpl中WorkerCountProviderImpl创建顺序后于此处
         this(userSession, new WorkerCountProviderImpl());
     }
 
@@ -84,7 +87,8 @@ public class WorkerCountAction implements CeWsAction {
         }
         return builder
             .setValue(workerCountProvider.get())
-            .setCanSetWorkerCount(true)
+            // .setCanSetWorkerCount(true)
+            .setCanSetWorkerCount(false) // 不允许修改 ???
             .build();
     }
 

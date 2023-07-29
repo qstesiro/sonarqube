@@ -15,7 +15,7 @@
     alias clean='./gradlew clean --parallel --build-cache --console plain --exclude-task test'
     alias build='./gradlew build --parallel --build-cache --console plain --exclude-task test && rm -rf sonar-application/build/distributions/sonarqube-8.6.0-SNAPSHOT && unzip -d sonar-application/build/distributions/   sonar-application/build/distributions/sonar-application-8.6.0-SNAPSHOT.zip && rm -rf ./lib && cp -r  sonar-application/build/distributions/sonarqube-8.6.0-SNAPSHOT/lib ./lib'
 
-    export SONAR_ELASTIC_HOST=""
+    export SONAR_ELASTIC_HOST="es-cn-9g4mkz6a5c58utt8x.elasticsearch.aliyuncs.com"
     export SONAR_ELASTIC_PORT=9200
     export SONAR_ELASTIC_USER=""
     export SONAR_ELASTIC_PASSWORD=""
@@ -47,7 +47,17 @@
 
 # docker
 {
-    docker build ./ -t reg-qd-huangdao.xxx.net/library/sonarqube:8.6.0-community
-    docker push reg-qd-huangdao.xxx.net/library/sonarqube:8.6.0-community
-    docker pull reg-qd-huangdao.xxx.net/library/sonarqube:8.6.0-community
+    docker build ./ -t reg-qd-huangdao.xxx.net/library/sonarqube:8.6.0-community-parallel
+    docker push reg-qd-huangdao.xxx.net/library/sonarqube:8.6.0-community-parallel
+    docker build ./ -t reg-bj-uplus-uat.xxx.net/library/sonarqube:8.6.0-community-parallel
+    docker push reg-bj-uplus-uat.xxx.net/library/sonarqube:8.6.0-community-parallel
+    docker build ./ -t reg-bj-uplus-test.xxx.net/library/sonarqube:8.6.0-community-parallel
+    docker push reg-bj-uplus-test.xxx.net/library/sonarqube:8.6.0-community-parallel
+
+    docker build ./ -t reg-qd-huangdao.xxx.net/library/sonarqube:8.6.0-community-parallel-es
+    docker push reg-qd-huangdao.xxx.net/library/sonarqube:8.6.0-community-parallel-es
+    docker build ./ -t reg-bj-uplus-uat.xxx.net/library/sonarqube:8.6.0-community-parallel-es
+    docker push reg-bj-uplus-uat.xxx.net/library/sonarqube:8.6.0-community-parallel-es
+    docker build ./ -t reg-bj-uplus-test.xxx.net/library/sonarqube:8.6.0-community-parallel-es
+    docker push reg-bj-uplus-test.xxx.net/library/sonarqube:8.6.0-community-parallel-es
 }
