@@ -25,13 +25,18 @@ import org.sonar.application.process.ManagedProcess;
 
 public interface ProcessLauncher extends Closeable {
 
-  @Override
-  void close();
+    @Override
+    void close();
 
-  /**
-   * Launch a command.
-   *
-   * @throws IllegalStateException if an error occurs
-   */
-  ManagedProcess launch(AbstractCommand command);
+    /**
+     * Launch a command.
+     *
+     * @throws IllegalStateException if an error occurs
+     */
+    ManagedProcess launch(AbstractCommand command);
+
+    /**
+     * startup external elasticsearch.
+     */
+    boolean isExternalElastic();
 }

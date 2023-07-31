@@ -38,81 +38,85 @@ import static org.sonar.process.ProcessProperties.Property.CLUSTER_NAME;
 
 public class App {
 
-  private final SystemExit systemExit = new SystemExit();
-  private final JavaVersion javaVersion;
-  private StopRequestWatcher stopRequestWatcher = null;
-  private StopRequestWatcher hardStopRequestWatcher = null;
-  public App(JavaVersion javaVersion) {
-    this.javaVersion = javaVersion;
-  }
-
-  public void start(String[] cliArguments) {
-    AppSettingsLoader settingsLoader = new AppSettingsLoaderImpl(System2.INSTANCE, cliArguments, new ServiceLoaderWrapper());
-    AppSettings settings = settingsLoader.load();
-    // order is important - logging must be configured before any other components (AppFileSystem, ...)
-    AppLogging logging = new AppLogging(settings);
-    logging.configure();
-    AppFileSystem fileSystem = new AppFileSystem(settings);
-    checkJavaVersion();
-
-    try (AppState appState = new AppStateFactory(settings).create()) {
-      appState.registerSonarQubeVersion(getSonarqubeVersion());
-      appState.registerClusterName(settings.getProps().nonNullValue(CLUSTER_NAME.getKey()));
-      AppReloader appReloader = new AppReloaderImpl(settingsLoader, fileSystem, appState, logging);
-      fileSystem.reset();
-      CommandFactory commandFactory = new CommandFactoryImpl(settings.getProps(), fileSystem.getTempDir(), System2.INSTANCE, JavaVersion.INSTANCE);
-
-      try (ProcessLauncher processLauncher = new ProcessLauncherImpl(fileSystem.getTempDir())) {
-        Scheduler scheduler = new SchedulerImpl(settings, appReloader, commandFactory, processLauncher, appState);
-
-        scheduler.schedule();
-
-        stopRequestWatcher = StopRequestWatcherImpl.create(settings, scheduler, fileSystem);
-        hardStopRequestWatcher = HardStopRequestWatcherImpl.create(scheduler, fileSystem);
-
-        // intercepts CTRL-C
-        Runtime.getRuntime().addShutdownHook(new ShutdownHook(scheduler));
-
-        stopRequestWatcher.startWatching();
-        hardStopRequestWatcher.startWatching();
-
-        scheduler.awaitTermination();
-        hardStopRequestWatcher.stopWatching();
-      }
-    } catch (Exception e) {
-      Loggers.get(App.class).error("Startup failure", e);
+    public static void main(String[] args) throws Exception {
+        new App(JavaVersion.INSTANCE).start(args);
     }
 
-    systemExit.exit(0);
-  }
+    private final SystemExit systemExit = new SystemExit();
+    private final JavaVersion javaVersion;
+    private StopRequestWatcher stopRequestWatcher = null;
+    private StopRequestWatcher hardStopRequestWatcher = null;
 
-  private void checkJavaVersion() {
-    if (MetadataLoader.loadEdition(org.sonar.api.utils.System2.INSTANCE) == SonarEdition.SONARCLOUD) {
-      return;
-    }
-    checkState(javaVersion.isAtLeastJava11(), "SonarQube requires Java 11 to run");
-  }
-
-  public static void main(String[] args) throws Exception {
-    new App(JavaVersion.INSTANCE).start(args);
-  }
-
-  private class ShutdownHook extends Thread {
-    private final Scheduler scheduler;
-
-    public ShutdownHook(Scheduler scheduler) {
-      super("Shutdown Hook");
-      this.scheduler = scheduler;
+    public App(JavaVersion javaVersion) {
+        this.javaVersion = javaVersion;
     }
 
-    @Override
-    public void run() {
-      systemExit.setInShutdownHook();
-      stopRequestWatcher.stopWatching();
-      hardStopRequestWatcher.stopWatching();
-
-      // blocks until everything is corrected terminated
-      scheduler.stop();
+    public void start(String[] cliArguments) {
+        AppSettingsLoader settingsLoader = new AppSettingsLoaderImpl(
+            System2.INSTANCE,
+            cliArguments,
+            new ServiceLoaderWrapper()
+        );
+        AppSettings settings = settingsLoader.load();
+        // order is important - logging must be configured before any other components (AppFileSystem, ...)
+        AppLogging logging = new AppLogging(settings);
+        logging.configure();
+        AppFileSystem fileSystem = new AppFileSystem(settings);
+        checkJavaVersion();
+        try (AppState appState = new AppStateFactory(settings).create()) {
+            appState.registerSonarQubeVersion(getSonarqubeVersion());
+            appState.registerClusterName(settings.getProps().nonNullValue(CLUSTER_NAME.getKey()));
+            AppReloader appReloader = new AppReloaderImpl(settingsLoader, fileSystem, appState, logging);
+            fileSystem.reset();
+            CommandFactory commandFactory = new CommandFactoryImpl(
+                settings.getProps(),
+                fileSystem.getTempDir(),
+                System2.INSTANCE,
+                JavaVersion.INSTANCE
+            );
+            try (ProcessLauncher processLauncher = new ProcessLauncherImpl(settings, fileSystem.getTempDir())) {
+                Scheduler scheduler = new SchedulerImpl(
+                    settings, appReloader, commandFactory, processLauncher, appState
+                );
+                scheduler.schedule();
+                stopRequestWatcher = StopRequestWatcherImpl.create(settings, scheduler, fileSystem);
+                hardStopRequestWatcher = HardStopRequestWatcherImpl.create(scheduler, fileSystem);
+                // intercepts CTRL-C
+                Runtime.getRuntime().addShutdownHook(new ShutdownHook(scheduler));
+                stopRequestWatcher.startWatching();
+                hardStopRequestWatcher.startWatching();
+                scheduler.awaitTermination();
+                hardStopRequestWatcher.stopWatching();
+            }
+        } catch (Exception e) {
+            Loggers.get(App.class).error("Startup failure", e);
+        }
+        systemExit.exit(0);
     }
-  }
+
+    private void checkJavaVersion() {
+        if (MetadataLoader.loadEdition(org.sonar.api.utils.System2.INSTANCE) == SonarEdition.SONARCLOUD) {
+            return;
+        }
+        checkState(javaVersion.isAtLeastJava11(), "SonarQube requires Java 11 to run");
+    }
+
+    private class ShutdownHook extends Thread {
+
+        private final Scheduler scheduler;
+
+        public ShutdownHook(Scheduler scheduler) {
+            super("Shutdown Hook");
+            this.scheduler = scheduler;
+        }
+
+        @Override
+        public void run() {
+            systemExit.setInShutdownHook();
+            stopRequestWatcher.stopWatching();
+            hardStopRequestWatcher.stopWatching();
+            // blocks until everything is corrected terminated
+            scheduler.stop();
+        }
+    }
 }

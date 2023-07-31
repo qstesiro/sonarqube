@@ -2,7 +2,7 @@
 {
     # 8.6
     {
-        export JAVA_HOME=/home/qstesiro/openjdk-14.0.1
+        export JAVA_HOME=/home/qstesiro/openjdk-11.0.1
         export PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH
     }
 
@@ -25,9 +25,9 @@
 
     alias run='./sonar-application/build/distributions/sonarqube-8.6.0-SNAPSHOT/bin/linux-x86-64/sonar.sh console'
 
-    alias log-ce='while [[ ! -f "sonarqube-8.6.0-SNAPSHOT/logs/ce.log" ]]; do sleep 1s; done; tail -f -n 10240 sonarqube-8.6.0-SNAPSHOT/logs/ce.log'
-    alias log-es='while [[ ! -f "sonarqube-8.6.0-SNAPSHOT/logs/es.log" ]]; do sleep 1s; done; tail -f -n 10240 sonarqube-8.6.0-SNAPSHOT/logs/es.log'
-    alias log-web='while [[ ! -f "sonarqube-8.6.0-SNAPSHOT/logs/web.log" ]]; do sleep 1s; done; tail -f -n 10240 sonarqube-8.6.0-SNAPSHOT/logs/web.log'
+    alias log-ce='while [[ ! -f "sonar-application/build/distributions/sonarqube-8.6.0-SNAPSHOT/logs/ce.log" ]]; do sleep 1s; done; tail -f -n 10240 sonar-application/build/distributions/sonarqube-8.6.0-SNAPSHOT/logs/ce.log'
+    alias log-es='while [[ ! -f "sonar-application/build/distributions/sonarqube-8.6.0-SNAPSHOT/logs/es.log" ]]; do sleep 1s; done; tail -f -n 10240 sonar-application/build/distributions/sonarqube-8.6.0-SNAPSHOT/logs/es.log'
+    alias log-web='while [[ ! -f "sonar-application/build/distributions/sonarqube-8.6.0-SNAPSHOT/logs/web.log" ]]; do sleep 1s; done; tail -f -n 10240 sonar-application/build/distributions/sonarqube-8.6.0-SNAPSHOT/logs/web.log'
 }
 
 # 扫描

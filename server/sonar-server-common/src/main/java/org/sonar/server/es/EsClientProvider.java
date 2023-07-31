@@ -74,17 +74,23 @@ public class EsClientProvider extends ProviderAdapter {
                 // * in org.sonar.process.ProcessProperties.Property.SEARCH_HOST
                 // * in org.sonar.process.ProcessProperties.Property.SEARCH_PORT
                 if (!isExternalElastic(config)) {
-                    HostAndPort host = HostAndPort.fromParts(config.get(SEARCH_HOST.getKey()).get(),
-                                                             config.getInt(SEARCH_PORT.getKey()).get());
+                    HostAndPort host = HostAndPort.fromParts(
+                        config.get(SEARCH_HOST.getKey()).get(),
+                        config.getInt(SEARCH_PORT.getKey()).get()
+                    );
                     httpHosts = Collections.singletonList(toHttpHost(host));
                     cache = new EsClient(httpHosts.toArray(new HttpHost[0]));
                 } else {
-                    HostAndPort host = HostAndPort.fromParts(config.get(ELASTIC_HOST.getKey()).get(),
-                                                             config.getInt(ELASTIC_PORT.getKey()).get());
+                    HostAndPort host = HostAndPort.fromParts(
+                        config.get(ELASTIC_HOST.getKey()).get(),
+                        config.getInt(ELASTIC_PORT.getKey()).get()
+                    );
                     httpHosts = Collections.singletonList(toHttpHost(host));
-                    cache = new EsClient(config.get(ELASTIC_USER.getKey()).get(),
-                                         config.get(ELASTIC_PASSWORD.getKey()).get(),
-                                         httpHosts.toArray(new HttpHost[0]));
+                    cache = new EsClient(
+                        config.get(ELASTIC_USER.getKey()).get(),
+                        config.get(ELASTIC_PASSWORD.getKey()).get(),
+                        httpHosts.toArray(new HttpHost[0])
+                    );
                 }
                 LOGGER.info("--- Connected to local Elasticsearch: [{}]", displayedAddresses(httpHosts));
             }
@@ -93,7 +99,8 @@ public class EsClientProvider extends ProviderAdapter {
     }
 
     private boolean isExternalElastic(Configuration config) {
-        return config.get(ELASTIC_HOST.getKey()).orElse(null) != null &&
+        return
+            config.get(ELASTIC_HOST.getKey()).orElse(null) != null &&
             config.getInt(ELASTIC_PORT.getKey()).orElse(0) != 0 &&
             config.get(ELASTIC_USER.getKey()).orElse(null) != null &&
             config.get(ELASTIC_PASSWORD.getKey()).orElse(null) != null;

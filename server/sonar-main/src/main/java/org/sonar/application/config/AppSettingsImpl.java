@@ -24,24 +24,24 @@ import org.sonar.process.Props;
 
 public class AppSettingsImpl implements AppSettings {
 
-  private volatile Props props;
+    private volatile Props props; // volatile ???
 
-  AppSettingsImpl(Props props) {
-    this.props = props;
-  }
+    AppSettingsImpl(Props props) {
+        this.props = props;
+    }
 
-  @Override
-  public Props getProps() {
-    return props;
-  }
+    @Override
+    public Props getProps() {
+        return props;
+    }
 
-  @Override
-  public Optional<String> getValue(String key) {
-    return Optional.ofNullable(props.value(key));
-  }
+    @Override
+    public Optional<String> getValue(String key) {
+        return Optional.ofNullable(props.value(key));
+    }
 
-  @Override
-  public void reload(Props copy) {
-    this.props = copy;
-  }
+    @Override
+    public void reload(Props copy) {
+        this.props = copy;
+    }
 }

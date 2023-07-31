@@ -50,107 +50,133 @@ import static org.sonar.process.ProcessProperties.Property.PATH_HOME;
 
 public class AppSettingsLoaderImpl implements AppSettingsLoader {
 
-  private final System2 system;
-  private final File homeDir;
-  private final String[] cliArguments;
-  private final Consumer<Props>[] consumers;
-  private final ServiceLoaderWrapper serviceLoaderWrapper;
+    private final System2 system;
+    private final File homeDir;
+    private final String[] cliArguments;
+    private final Consumer<Props>[] consumers;
+    private final ServiceLoaderWrapper serviceLoaderWrapper;
 
-  public AppSettingsLoaderImpl(System2 system, String[] cliArguments, ServiceLoaderWrapper serviceLoaderWrapper) {
-    this(system, cliArguments, detectHomeDir(), serviceLoaderWrapper, new FileSystemSettings(), new JdbcSettings(),
-      new ClusterSettings(NetworkUtilsImpl.INSTANCE));
-  }
-
-  @SafeVarargs
-  AppSettingsLoaderImpl(System2 system, String[] cliArguments, File homeDir, ServiceLoaderWrapper serviceLoaderWrapper, Consumer<Props>... consumers) {
-    this.system = system;
-    this.cliArguments = cliArguments;
-    this.homeDir = homeDir;
-    this.serviceLoaderWrapper = serviceLoaderWrapper;
-    this.consumers = consumers;
-  }
-
-  File getHomeDir() {
-    return homeDir;
-  }
-
-  @Override
-  public AppSettings load() {
-    Properties p = loadPropertiesFile(homeDir);
-    Set<String> keysOverridableFromEnv = stream(ProcessProperties.Property.values()).map(ProcessProperties.Property::getKey)
-      .collect(Collectors.toSet());
-    keysOverridableFromEnv.addAll(p.stringPropertyNames());
-
-    // 1st pass to load static properties
-    Props staticProps = reloadProperties(keysOverridableFromEnv, p);
-    keysOverridableFromEnv.addAll(getDynamicPropertiesKeys(staticProps));
-
-    // 2nd pass to load dynamic properties like `ldap.*.url` or `ldap.*.baseDn` which keys depend on values of static
-    // properties loaded in 1st step
-    Props props = reloadProperties(keysOverridableFromEnv, p);
-
-    new ProcessProperties(serviceLoaderWrapper).completeDefaults(props);
-    stream(consumers).forEach(c -> c.accept(props));
-    return new AppSettingsImpl(props);
-  }
-
-  private static Set<String> getDynamicPropertiesKeys(Props p) {
-    Set<String> dynamicPropertiesKeys = new HashSet<>();
-    String ldapServersValue = p.value(LDAP_SERVERS.getKey());
-    if (ldapServersValue != null) {
-      stream(SettingFormatter.getStringArrayBySeparator(ldapServersValue, ",")).forEach(
-        ldapServer -> MULTI_SERVER_LDAP_SETTINGS.forEach(
-          multiLdapSetting -> dynamicPropertiesKeys.add(multiLdapSetting.replace("*", ldapServer))));
+    public AppSettingsLoaderImpl(
+        System2 system,
+        String[] cliArguments,
+        ServiceLoaderWrapper serviceLoaderWrapper
+    ) {
+        this(
+            system,
+            cliArguments,
+            detectHomeDir(),
+            serviceLoaderWrapper,
+            new FileSystemSettings(),
+            new JdbcSettings(),
+            new ClusterSettings(NetworkUtilsImpl.INSTANCE)
+        );
     }
 
-    return dynamicPropertiesKeys;
-  }
-
-  private Props reloadProperties(Set<String> keysOverridableFromEnv, Properties p) {
-    loadPropertiesFromEnvironment(system, p, keysOverridableFromEnv);
-    p.putAll(CommandLineParser.parseArguments(cliArguments));
-    p.setProperty(PATH_HOME.getKey(), homeDir.getAbsolutePath());
-    p = ConfigurationUtils.interpolateVariables(p, system.getenv());
-
-    // the difference between Properties and Props is that the latter
-    // supports decryption of values, so it must be used when values
-    // are accessed
-    return new Props(p);
-  }
-
-  private static void loadPropertiesFromEnvironment(System2 system, Properties properties, Set<String> overridableSettings) {
-    overridableSettings.forEach(key -> {
-      String environmentVarName = fromJavaPropertyToEnvVariable(key);
-      Optional<String> envVarValue = ofNullable(system.getenv(environmentVarName));
-      envVarValue.ifPresent(value -> properties.put(key, value));
-    });
-  }
-
-  private static File detectHomeDir() {
-    try {
-      File appJar = new File(Class.forName("org.sonar.application.App").getProtectionDomain().getCodeSource().getLocation().toURI());
-      return appJar.getParentFile().getParentFile();
-    } catch (URISyntaxException | ClassNotFoundException e) {
-      throw new IllegalStateException("Cannot detect path of main jar file", e);
+    @SafeVarargs
+    AppSettingsLoaderImpl(
+        System2 system,
+        String[] cliArguments,
+        File homeDir,
+        ServiceLoaderWrapper serviceLoaderWrapper,
+        Consumer<Props>... consumers
+    ) {
+        this.system = system;
+        this.cliArguments = cliArguments;
+        this.homeDir = homeDir;
+        this.serviceLoaderWrapper = serviceLoaderWrapper;
+        this.consumers = consumers;
     }
-  }
 
-  /**
-   * Loads the configuration file ${homeDir}/conf/sonar.properties.
-   * An empty {@link Properties} is returned if the file does not exist.
-   */
-  private static Properties loadPropertiesFile(File homeDir) {
-    Properties p = new Properties();
-    File propsFile = new File(homeDir, "conf/sonar.properties");
-    if (propsFile.exists()) {
-      try (Reader reader = new InputStreamReader(new FileInputStream(propsFile), UTF_8)) {
-        p.load(reader);
-      } catch (IOException e) {
-        throw new IllegalStateException("Cannot open file " + propsFile, e);
-      }
-    } else {
-      LoggerFactory.getLogger(AppSettingsLoaderImpl.class).warn("Configuration file not found: {}", propsFile);
+    File getHomeDir() {
+        return homeDir;
     }
-    return p;
-  }
+
+    @Override
+    public AppSettings load() {
+        Properties p = loadPropertiesFile(homeDir);
+        Set<String> keysOverridableFromEnv = stream(ProcessProperties.Property.values())
+            .map(ProcessProperties.Property::getKey)
+            .collect(Collectors.toSet());
+        keysOverridableFromEnv.addAll(p.stringPropertyNames());
+        // 1st pass to load static properties
+        Props staticProps = reloadProperties(keysOverridableFromEnv, p);
+        keysOverridableFromEnv.addAll(getDynamicPropertiesKeys(staticProps));
+        // 2nd pass to load dynamic properties like `ldap.*.url` or `ldap.*.baseDn`
+        // which keys depend on values of static
+        // properties loaded in 1st step
+        Props props = reloadProperties(keysOverridableFromEnv, p);
+        new ProcessProperties(serviceLoaderWrapper).completeDefaults(props);
+        stream(consumers).forEach(c -> c.accept(props));
+        return new AppSettingsImpl(props);
+    }
+
+    private static Set<String> getDynamicPropertiesKeys(Props p) {
+        Set<String> dynamicPropertiesKeys = new HashSet<>();
+        String ldapServersValue = p.value(LDAP_SERVERS.getKey());
+        if (ldapServersValue != null) {
+            stream(SettingFormatter.getStringArrayBySeparator(ldapServersValue, ",")).forEach(
+                ldapServer -> MULTI_SERVER_LDAP_SETTINGS.forEach(
+                    multiLdapSetting -> dynamicPropertiesKeys.add(multiLdapSetting.replace("*", ldapServer))));
+        }
+        return dynamicPropertiesKeys;
+    }
+
+    private Props reloadProperties(Set<String> keysOverridableFromEnv, Properties p) {
+        loadPropertiesFromEnvironment(system, p, keysOverridableFromEnv);
+        p.putAll(CommandLineParser.parseArguments(cliArguments));
+        p.setProperty(PATH_HOME.getKey(), homeDir.getAbsolutePath());
+        p = ConfigurationUtils.interpolateVariables(p, system.getenv());
+        // the difference between Properties and Props is that the latter
+        // supports decryption of values, so it must be used when values
+        // are accessed
+        return new Props(p);
+    }
+
+    private static void loadPropertiesFromEnvironment(
+        System2 system,
+        Properties properties,
+        Set<String> overridableSettings
+    ) {
+        overridableSettings.forEach(key -> {
+                String environmentVarName = fromJavaPropertyToEnvVariable(key);
+                Optional<String> envVarValue = ofNullable(system.getenv(environmentVarName));
+                envVarValue.ifPresent(value -> properties.put(key, value));
+            }
+        );
+    }
+
+    private static File detectHomeDir() {
+        try {
+            File appJar = new File(
+                Class.forName("org.sonar.application.App")
+                    .getProtectionDomain()
+                    .getCodeSource()
+                    .getLocation()
+                    .toURI()
+            );
+            return appJar.getParentFile().getParentFile();
+        } catch (URISyntaxException | ClassNotFoundException e) {
+            throw new IllegalStateException("Cannot detect path of main jar file", e);
+        }
+    }
+
+    /**
+     * Loads the configuration file ${homeDir}/conf/sonar.properties.
+     * An empty {@link Properties} is returned if the file does not exist.
+     */
+    private static Properties loadPropertiesFile(File homeDir) {
+        Properties p = new Properties();
+        File propsFile = new File(homeDir, "conf/sonar.properties");
+        if (propsFile.exists()) {
+            try (Reader reader = new InputStreamReader(new FileInputStream(propsFile), UTF_8)) {
+                p.load(reader);
+            } catch (IOException e) {
+                throw new IllegalStateException("Cannot open file " + propsFile, e);
+            }
+        } else {
+            LoggerFactory.getLogger(AppSettingsLoaderImpl.class)
+                .warn("Configuration file not found: {}", propsFile);
+        }
+        return p;
+    }
 }

@@ -254,9 +254,17 @@ public class ProcessProperties {
 
     private Properties defaults() {
         Properties defaults = new Properties();
-        defaults.putAll(Arrays.stream(Property.values())
-                        .filter(Property::hasDefaultValue)
-                        .collect(Collectors.toMap(Property::getKey, Property::getDefaultValue)));
+        defaults.putAll(
+            Arrays
+            .stream(Property.values())
+            .filter(Property::hasDefaultValue)
+            .collect(
+                Collectors.toMap(
+                    Property::getKey,
+                    Property::getDefaultValue
+                )
+            )
+        );
         defaults.putAll(loadDefaultsFromExtensions());
         return defaults;
     }
