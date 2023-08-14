@@ -76,16 +76,16 @@ public class CeConfigurationImpl implements CeConfiguration {
             this.workerCount = DEFAULT_WORKER_COUNT;
             // this.workerThreadCount = DEFAULT_WORKER_THREAD_COUNT;
             this.workerThreadCount = workerCountProvider.get(); // ???
-            LOG.info("--- workerCountProvider == null, workerCount: {}, workerThreadCount: {}",
-                     this.workerCount,
-                     this.workerThreadCount);
+            // LOG.info("--- workerCountProvider == null, workerCount: {}, workerThreadCount: {}",
+            //          this.workerCount,
+            //          this.workerThreadCount);
         } else {
             this.workerCount = readWorkerCount(workerCountProvider);
             // this.workerThreadCount = MAX_WORKER_THREAD_COUNT;
             this.workerThreadCount = workerCountProvider.get(); // ???
-            LOG.info("--- workerCountProvider != null, workerCount: {}, workerThreadCount: {}",
-                     this.workerCount,
-                     this.workerThreadCount);
+            // LOG.info("--- workerCountProvider != null, workerCount: {}, workerThreadCount: {}",
+            //          this.workerCount,
+            //          this.workerThreadCount);
         }
     }
 

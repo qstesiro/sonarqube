@@ -60,7 +60,7 @@ public class CeProcessingSchedulerImpl implements CeProcessingScheduler {
         this.timeUnit = MILLISECONDS;
 
         int threadWorkerCount = ceConfiguration.getWorkerMaxCount();
-        LOG.info("--- threadWorkerCount: {}", threadWorkerCount); // ???
+        // LOG.info("--- threadWorkerCount: {}", threadWorkerCount); // ???
         this.chainingCallbacks = new ChainingCallback[threadWorkerCount];
         for (int i = 0; i < threadWorkerCount; i++) {
             CeWorker worker = ceCeWorkerFactory.create(i);

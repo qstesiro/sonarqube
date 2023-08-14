@@ -92,7 +92,7 @@ public class EsClientProvider extends ProviderAdapter {
                         httpHosts.toArray(new HttpHost[0])
                     );
                 }
-                LOGGER.info("--- Connected to local Elasticsearch: [{}]", displayedAddresses(httpHosts));
+                // LOGGER.info("--- Connected to local Elasticsearch: [{}]", displayedAddresses(httpHosts));
             }
         }
         return cache;

@@ -69,7 +69,7 @@ public class CeWorkerImpl implements CeWorker {
                         InternalCeQueue queue, CeTaskProcessorRepository taskProcessorRepository,
                         CeWorkerController ceWorkerController,
                         ExecutionListener... listeners) {
-        LOG.info("--- CeWorkerImpl.CeWorkerImpl");
+        // LOG.info("--- CeWorkerImpl.CeWorkerImpl");
         this.ordinal = checkOrdinal(ordinal);
         this.uuid = uuid;
         this.queue = queue;
@@ -168,7 +168,7 @@ public class CeWorkerImpl implements CeWorker {
         if (!ceTask.isPresent()) {
             return NO_TASK;
         }
-        LOG.info("--- CeWorkerImpl.findAndProcessTask {}", ceTask.get());
+        // LOG.info("--- CeWorkerImpl.findAndProcessTask {}", ceTask.get());
         try (CeWorkerController.ProcessingRecorderHook processing = ceWorkerController.registerProcessingFor(this);
              ExecuteTask executeTask = new ExecuteTask(localRunningState, ceTask.get())) {
             executeTask.run();
@@ -227,7 +227,7 @@ public class CeWorkerImpl implements CeWorker {
         @Override
         public void run() {
             beforeExecute();
-            LOG.info("--- component: {}", task.getComponent().toString());
+            // LOG.info("--- component: {}", task.getComponent().toString());
             // ???
             // Optional<CeTask.Component> component = task.getComponent();
             // if (component.isPresent()) {
@@ -257,7 +257,7 @@ public class CeWorkerImpl implements CeWorker {
         }
 
         private void beforeExecute() {
-            LOG.info("--- ExecuteTask.beforeExecute {}", task);
+            // LOG.info("--- ExecuteTask.beforeExecute {}", task);
             localRunningState.setTask(task);
             callListeners(t -> t.onStart(task));
         }
@@ -295,7 +295,7 @@ public class CeWorkerImpl implements CeWorker {
         }
 
         private void afterExecute() {
-            LOG.info("--- ExecuteTask.afterExecute {}", task);
+            // LOG.info("--- ExecuteTask.afterExecute {}", task);
             localRunningState.setTask(null);
             finalizeTask(task, ceProfiler, status, taskResult, error);
         }
@@ -322,9 +322,9 @@ public class CeWorkerImpl implements CeWorker {
         private void callListeners(Consumer<ExecutionListener> call) {
             listeners.forEach(listener -> {
                     try {
-                        Loggers.get(CeWorkerImpl.class).info("--- call accept enter");
+                        // Loggers.get(CeWorkerImpl.class).info("--- call accept enter");
                         call.accept(listener);
-                        Loggers.get(CeWorkerImpl.class).info("--- call accept leave");
+                        // Loggers.get(CeWorkerImpl.class).info("--- call accept leave");
                     } catch (Throwable t) {
                         LOG.error(format("Call to listener %s failed.", listener.getClass().getSimpleName()), t);
                     }

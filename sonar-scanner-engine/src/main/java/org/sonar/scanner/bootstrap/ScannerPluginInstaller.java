@@ -98,14 +98,14 @@ public class ScannerPluginInstaller implements PluginInstaller {
                 inPlugins.put(key, false);
             }
         }
-        inPlugins.forEach((k, v) -> LOG.info("--- key: {}, value: {}", k, v));
+        // inPlugins.forEach((k, v) -> LOG.info("--- key: {}, value: {}", k, v));
         for (String key : config.get(PluginExclusions).orElse("").trim().split(",")) {
             key = key.trim();
             if (!key.equals("")) {
                 exPlugins.put(key.trim(), false);
             }
         }
-        exPlugins.forEach((k, v) -> LOG.info("--- key: {}, value: {}", k, v));
+        // exPlugins.forEach((k, v) -> LOG.info("--- key: {}, value: {}", k, v));
     }
 
     private Loaded loadPlugins(Map<String, ScannerPlugin> result) {
