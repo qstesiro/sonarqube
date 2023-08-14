@@ -2,6 +2,7 @@
 {
     # 8.6
     {
+        jdk11
         export JAVA_HOME=/home/qstesiro/openjdk-11.0.1
         export PATH=$JAVA_HOME/bin:$JAVA_HOME/jre/bin:$PATH
     }

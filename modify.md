@@ -14,5 +14,9 @@
   - server/sonar-server-common/src/main/java/org/sonar/server/es/EsClient.java
   - server/sonar-server-common/src/main/java/org/sonar/server/es/EsClientProvider.java
 
+- 支持插件装载配置
+  - sonar-scanner-engine/src/main/java/org/sonar/scanner/bootstrap/PluginInstaller.java
+  - sonar-scanner-engine/src/main/java/org/sonar/scanner/bootstrap/ScannerPluginInstaller.java
+
 - 遗留问题
   - 外置es可能存在升级问题,需要进一步调研
