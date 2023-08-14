@@ -32,43 +32,49 @@ import static org.sonar.core.util.FileUtils.deleteQuietly;
 
 public class ScannerPluginJarExploder extends PluginJarExploder {
 
-  private final PluginFiles pluginFiles;
+    private final PluginFiles pluginFiles;
 
-  public ScannerPluginJarExploder(PluginFiles pluginFiles) {
-    this.pluginFiles = pluginFiles;
-  }
-
-  @Override
-  public ExplodedPlugin explode(PluginInfo info) {
-    try {
-      File dir = unzipFile(info.getNonNullJarFile());
-      return explodeFromUnzippedDir(info, info.getNonNullJarFile(), dir);
-    } catch (Exception e) {
-      throw new IllegalStateException(String.format("Fail to open plugin [%s]: %s", info.getKey(), info.getNonNullJarFile().getAbsolutePath()), e);
+    public ScannerPluginJarExploder(PluginFiles pluginFiles) {
+        this.pluginFiles = pluginFiles;
     }
-  }
 
-  private File unzipFile(File cachedFile) throws IOException {
-    String filename = cachedFile.getName();
-    File destDir = new File(cachedFile.getParentFile(), filename + "_unzip");
-    File lockFile = new File(cachedFile.getParentFile(), filename + "_unzip.lock");
-    if (!destDir.exists()) {
-      try (FileOutputStream out = new FileOutputStream(lockFile)) {
-        java.nio.channels.FileLock lock = out.getChannel().lock();
+    @Override
+    public ExplodedPlugin explode(PluginInfo info) {
         try {
-          // Recheck in case of concurrent processes
-          if (!destDir.exists()) {
-            File tempDir = pluginFiles.createTempDir();
-            ZipUtils.unzip(cachedFile, tempDir, newLibFilter());
-            FileUtils.moveDirectory(tempDir, destDir);
-          }
-        } finally {
-          lock.release();
+            File dir = unzipFile(info.getNonNullJarFile());
+            return explodeFromUnzippedDir(info, info.getNonNullJarFile(), dir);
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                String.format(
+                    "Fail to open plugin [%s]: %s",
+                    info.getKey(),
+                    info.getNonNullJarFile().getAbsolutePath()
+                ), e
+            );
         }
-      } finally {
-        deleteQuietly(lockFile);
-      }
     }
-    return destDir;
-  }
+
+    private File unzipFile(File cachedFile) throws IOException {
+        String filename = cachedFile.getName();
+        File destDir = new File(cachedFile.getParentFile(), filename + "_unzip");
+        File lockFile = new File(cachedFile.getParentFile(), filename + "_unzip.lock");
+        if (!destDir.exists()) {
+            try (FileOutputStream out = new FileOutputStream(lockFile)) {
+                java.nio.channels.FileLock lock = out.getChannel().lock();
+                try {
+                    // Recheck in case of concurrent processes
+                    if (!destDir.exists()) {
+                        File tempDir = pluginFiles.createTempDir();
+                        ZipUtils.unzip(cachedFile, tempDir, newLibFilter());
+                        FileUtils.moveDirectory(tempDir, destDir);
+                    }
+                } finally {
+                    lock.release();
+                }
+            } finally {
+                deleteQuietly(lockFile);
+            }
+        }
+        return destDir;
+    }
 }

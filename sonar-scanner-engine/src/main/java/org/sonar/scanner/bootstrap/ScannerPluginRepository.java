@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
 import org.picocontainer.Startable;
 import org.sonar.api.Plugin;
@@ -41,101 +42,105 @@ import static org.sonar.api.utils.Preconditions.checkState;
  * Orchestrates the installation and loading of plugins
  */
 public class ScannerPluginRepository implements PluginRepository, Startable {
-  private static final Logger LOG = Loggers.get(ScannerPluginRepository.class);
 
-  private final PluginInstaller installer;
-  private final PluginJarExploder pluginJarExploder;
-  private final PluginClassLoader loader;
+    private static final Logger LOG = Loggers.get(ScannerPluginRepository.class);
 
-  private Map<String, Plugin> pluginInstancesByKeys;
-  private Map<String, ScannerPlugin> pluginsByKeys;
-  private Map<ClassLoader, String> keysByClassLoader;
+    private final PluginInstaller installer;
+    private final PluginJarExploder pluginJarExploder;
+    private final PluginClassLoader loader;
 
-  public ScannerPluginRepository(PluginInstaller installer, PluginJarExploder pluginJarExploder, PluginClassLoader loader) {
-    this.installer = installer;
-    this.pluginJarExploder = pluginJarExploder;
-    this.loader = loader;
-  }
+    private Map<String, Plugin> pluginInstancesByKeys;
+    private Map<String, ScannerPlugin> pluginsByKeys;
+    private Map<ClassLoader, String> keysByClassLoader;
 
-  @Override
-  public void start() {
-    pluginsByKeys = new HashMap<>(installer.installRemotes());
-    Map<String, ExplodedPlugin> explodedPLuginsByKey = pluginsByKeys.entrySet().stream()
-      .collect(Collectors.toMap(Map.Entry::getKey, e -> pluginJarExploder.explode(e.getValue().getInfo())));
-    pluginInstancesByKeys = new HashMap<>(loader.load(explodedPLuginsByKey));
-
-    // this part is only used by medium tests
-    for (Object[] localPlugin : installer.installLocals()) {
-      String pluginKey = (String) localPlugin[0];
-      PluginInfo pluginInfo = new PluginInfo(pluginKey);
-      pluginsByKeys.put(pluginKey, new ScannerPlugin(pluginInfo.getKey(), (long) localPlugin[2], pluginInfo));
-      pluginInstancesByKeys.put(pluginKey, (Plugin) localPlugin[1]);
+    public ScannerPluginRepository(
+        PluginInstaller installer,
+        PluginJarExploder pluginJarExploder,
+        PluginClassLoader loader
+    ) {
+        // Stream.of(Thread.currentThread().getStackTrace())
+        //     .forEach(e -> LOG.info("--- {}", e)); // ???
+        this.installer = installer;
+        this.pluginJarExploder = pluginJarExploder;
+        this.loader = loader;
     }
 
-    keysByClassLoader = new HashMap<>();
-    for (Map.Entry<String, Plugin> e : pluginInstancesByKeys.entrySet()) {
-      keysByClassLoader.put(e.getValue().getClass().getClassLoader(), e.getKey());
+    @Override
+    public void start() {
+        pluginsByKeys = new HashMap<>(installer.installRemotes());
+        Map<String, ExplodedPlugin> explodedPLuginsByKey = pluginsByKeys.entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> pluginJarExploder.explode(e.getValue().getInfo())));
+        pluginInstancesByKeys = new HashMap<>(loader.load(explodedPLuginsByKey));
+        // this part is only used by medium tests
+        for (Object[] localPlugin : installer.installLocals()) {
+            String pluginKey = (String) localPlugin[0];
+            PluginInfo pluginInfo = new PluginInfo(pluginKey);
+            pluginsByKeys.put(pluginKey, new ScannerPlugin(pluginInfo.getKey(), (long) localPlugin[2], pluginInfo));
+            pluginInstancesByKeys.put(pluginKey, (Plugin) localPlugin[1]);
+        }
+        keysByClassLoader = new HashMap<>();
+        for (Map.Entry<String, Plugin> e : pluginInstancesByKeys.entrySet()) {
+            keysByClassLoader.put(e.getValue().getClass().getClassLoader(), e.getKey());
+        }
+        logPlugins();
     }
 
-    logPlugins();
-  }
-
-  @CheckForNull
-  public String getPluginKey(ClassLoader cl) {
-    return keysByClassLoader.get(cl);
-  }
-
-  private void logPlugins() {
-    if (pluginsByKeys.isEmpty()) {
-      LOG.debug("No plugins loaded");
-    } else {
-      LOG.debug("Plugins:");
-      for (ScannerPlugin p : pluginsByKeys.values()) {
-        LOG.debug("  * {} {} ({})", p.getName(), p.getVersion(), p.getKey());
-      }
+    @CheckForNull
+    public String getPluginKey(ClassLoader cl) {
+        return keysByClassLoader.get(cl);
     }
-  }
 
-  @Override
-  public void stop() {
-    // close plugin classloaders
-    loader.unload(pluginInstancesByKeys.values());
+    private void logPlugins() {
+        if (pluginsByKeys.isEmpty()) {
+            LOG.debug("No plugins loaded");
+        } else {
+            LOG.debug("Plugins:");
+            for (ScannerPlugin p : pluginsByKeys.values()) {
+                LOG.debug("  * {} {} ({})", p.getName(), p.getVersion(), p.getKey());
+            }
+        }
+    }
 
-    pluginInstancesByKeys.clear();
-    pluginsByKeys.clear();
-    keysByClassLoader.clear();
-  }
+    @Override
+    public void stop() {
+        // close plugin classloaders
+        loader.unload(pluginInstancesByKeys.values());
 
-  public Map<String, ScannerPlugin> getPluginsByKey() {
-    return pluginsByKeys;
-  }
+        pluginInstancesByKeys.clear();
+        pluginsByKeys.clear();
+        keysByClassLoader.clear();
+    }
 
-  @Override
-  public Collection<PluginInfo> getPluginInfos() {
-    return pluginsByKeys.values().stream().map(ScannerPlugin::getInfo).collect(toList());
-  }
+    public Map<String, ScannerPlugin> getPluginsByKey() {
+        return pluginsByKeys;
+    }
 
-  @Override
-  public PluginInfo getPluginInfo(String key) {
-    ScannerPlugin info = pluginsByKeys.get(key);
-    checkState(info != null, "Plugin [%s] does not exist", key);
-    return info.getInfo();
-  }
+    @Override
+    public Collection<PluginInfo> getPluginInfos() {
+        return pluginsByKeys.values().stream().map(ScannerPlugin::getInfo).collect(toList());
+    }
 
-  @Override
-  public Plugin getPluginInstance(String key) {
-    Plugin instance = pluginInstancesByKeys.get(key);
-    checkState(instance != null, "Plugin [%s] does not exist", key);
-    return instance;
-  }
+    @Override
+    public PluginInfo getPluginInfo(String key) {
+        ScannerPlugin info = pluginsByKeys.get(key);
+        checkState(info != null, "Plugin [%s] does not exist", key);
+        return info.getInfo();
+    }
 
-  @Override
-  public Collection<Plugin> getPluginInstances() {
-    return pluginInstancesByKeys.values();
-  }
+    @Override
+    public Plugin getPluginInstance(String key) {
+        Plugin instance = pluginInstancesByKeys.get(key);
+        checkState(instance != null, "Plugin [%s] does not exist", key);
+        return instance;
+    }
 
-  @Override
-  public boolean hasPlugin(String key) {
-    return pluginsByKeys.containsKey(key);
-  }
+    @Override
+    public Collection<Plugin> getPluginInstances() {
+        return pluginInstancesByKeys.values();
+    }
+
+    @Override
+    public boolean hasPlugin(String key) {
+        return pluginsByKeys.containsKey(key);
+    }
 }

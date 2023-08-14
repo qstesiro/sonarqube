@@ -50,16 +50,25 @@ import static java.util.Optional.ofNullable;
 @ServerSide
 @ComputeEngineSide
 public class ComponentContainer implements ContainerPopulator.Container {
+
     public static final int COMPONENTS_IN_EMPTY_COMPONENT_CONTAINER = 2;
 
     private static final class ExtendedDefaultPicoContainer extends DefaultPicoContainer {
-        private ExtendedDefaultPicoContainer(ComponentFactory componentFactory, LifecycleStrategy lifecycleStrategy,
-                                             @Nullable PicoContainer parent, ComponentMonitor componentMonitor) {
+
+        private ExtendedDefaultPicoContainer(
+            ComponentFactory componentFactory,
+            LifecycleStrategy lifecycleStrategy,
+            @Nullable PicoContainer parent,
+            ComponentMonitor componentMonitor
+        ) {
             super(componentFactory, lifecycleStrategy, parent, componentMonitor);
         }
 
         @Override
-        public Object getComponent(final Object componentKeyOrType, final Class<? extends Annotation> annotation) {
+        public Object getComponent(
+            final Object componentKeyOrType,
+            final Class<? extends Annotation> annotation
+        ) {
             try {
                 return super.getComponent(componentKeyOrType, annotation);
             } catch (Throwable t) {
@@ -69,7 +78,9 @@ public class ComponentContainer implements ContainerPopulator.Container {
 
         @Override
         public MutablePicoContainer makeChildContainer() {
-            DefaultPicoContainer pc = new ExtendedDefaultPicoContainer(componentFactory, lifecycleStrategy, this, componentMonitor);
+            DefaultPicoContainer pc = new ExtendedDefaultPicoContainer(
+                componentFactory, lifecycleStrategy, this, componentMonitor
+            );
             addChildContainer(pc);
             return pc;
         }
@@ -92,7 +103,10 @@ public class ComponentContainer implements ContainerPopulator.Container {
         this(picoContainer, new PropertyDefinitions(System2.INSTANCE));
     }
 
-    protected ComponentContainer(MutablePicoContainer picoContainer, PropertyDefinitions propertyDefinitions) {
+    protected ComponentContainer(
+        MutablePicoContainer picoContainer,
+        PropertyDefinitions propertyDefinitions
+    ) {
         requireNonNull(propertyDefinitions, "PropertyDefinitions can not be null");
         this.parent = null;
         this.pico = picoContainer;
@@ -156,8 +170,8 @@ public class ComponentContainer implements ContainerPopulator.Container {
     }
 
     /**
-     * This method MUST NOT be renamed stop() because the container is registered itself in picocontainer. Starting
-     * a component twice is not authorized.
+     * This method MUST NOT be renamed stop() because the container is registered itself in picocontainer.
+     * Starting a component twice is not authorized.
      */
     public ComponentContainer stopComponents() {
         try {
@@ -175,7 +189,8 @@ public class ComponentContainer implements ContainerPopulator.Container {
     }
 
     private void stopChildren() {
-        // loop over a copy of list of children in reverse order, both to stop last added child first and because children
+        // loop over a copy of list of children in reverse order,
+        // both to stop last added child first and because children
         // remove themselves from the list of children of their parent (ie. changing this.children)
         Lists.reverse(new ArrayList<>(this.children))
             .forEach(ComponentContainer::stopComponents);
@@ -188,9 +203,9 @@ public class ComponentContainer implements ContainerPopulator.Container {
     public ComponentContainer add(Object... objects) {
         for (Object object : objects) {
             if (object instanceof ComponentAdapter) {
-                addPicoAdapter((ComponentAdapter) object);
+                addPicoAdapter((ComponentAdapter)object);
             } else if (object instanceof Iterable) {
-                add(Iterables.toArray((Iterable) object, Object.class));
+                add(Iterables.toArray((Iterable)object, Object.class));
             } else {
                 addSingleton(object);
             }
@@ -223,7 +238,7 @@ public class ComponentContainer implements ContainerPopulator.Container {
     public ComponentContainer addComponent(Object component, boolean singleton) {
         Object key = componentKeys.of(component);
         if (component instanceof ComponentAdapter) {
-            pico.addAdapter((ComponentAdapter) component);
+            pico.addAdapter((ComponentAdapter)component);
         } else {
             try {
                 pico.as(singleton ? Characteristics.CACHE : Characteristics.NO_CACHE).addComponent(key, component);
@@ -240,7 +255,10 @@ public class ComponentContainer implements ContainerPopulator.Container {
         try {
             pico.as(Characteristics.CACHE).addComponent(key, extension);
         } catch (Throwable t) {
-            throw new IllegalStateException("Unable to register extension " + getName(extension) + (pluginInfo != null ? (" from plugin '" + pluginInfo.getKey() + "'") : ""), t);
+            throw new IllegalStateException(
+                "Unable to register extension " + getName(extension) +
+                (pluginInfo != null ? (" from plugin '" + pluginInfo.getKey() + "'") : ""), t
+            );
         }
         declareExtension(pluginInfo, extension);
         return this;
@@ -311,7 +329,12 @@ public class ComponentContainer implements ContainerPopulator.Container {
     }
 
     public static MutablePicoContainer createPicoContainer() {
-        return new ExtendedDefaultPicoContainer(new OptInCaching(), new StartableCloseableSafeLifecyleStrategy(), null, new NullComponentMonitor());
+        return new ExtendedDefaultPicoContainer(
+            new OptInCaching(),
+            new StartableCloseableSafeLifecyleStrategy(),
+            null,
+            new NullComponentMonitor()
+        );
     }
 
     public ComponentContainer getParent() {
@@ -329,5 +352,4 @@ public class ComponentContainer implements ContainerPopulator.Container {
     public int size() {
         return pico.getComponentAdapters().size();
     }
-
 }

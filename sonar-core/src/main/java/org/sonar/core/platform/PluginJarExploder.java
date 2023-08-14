@@ -29,22 +29,22 @@ import static org.apache.commons.io.FileUtils.listFiles;
 
 public abstract class PluginJarExploder {
 
-  protected static final String LIB_RELATIVE_PATH_IN_JAR = "META-INF/lib";
+    protected static final String LIB_RELATIVE_PATH_IN_JAR = "META-INF/lib";
 
-  public abstract ExplodedPlugin explode(PluginInfo plugin);
+    public abstract ExplodedPlugin explode(PluginInfo plugin);
 
-  protected Predicate<ZipEntry> newLibFilter() {
-    return ze -> ze.getName().startsWith(LIB_RELATIVE_PATH_IN_JAR);
-  }
-
-  protected ExplodedPlugin explodeFromUnzippedDir(PluginInfo pluginInfo, File jarFile, File unzippedDir) {
-    File libDir = new File(unzippedDir, PluginJarExploder.LIB_RELATIVE_PATH_IN_JAR);
-    Collection<File> libs;
-    if (libDir.isDirectory() && libDir.exists()) {
-      libs = listFiles(libDir, null, false);
-    } else {
-      libs = Collections.emptyList();
+    protected Predicate<ZipEntry> newLibFilter() {
+        return ze -> ze.getName().startsWith(LIB_RELATIVE_PATH_IN_JAR);
     }
-    return new ExplodedPlugin(pluginInfo, pluginInfo.getKey(), jarFile, libs);
-  }
+
+    protected ExplodedPlugin explodeFromUnzippedDir(PluginInfo pluginInfo, File jarFile, File unzippedDir) {
+        File libDir = new File(unzippedDir, PluginJarExploder.LIB_RELATIVE_PATH_IN_JAR);
+        Collection<File> libs;
+        if (libDir.isDirectory() && libDir.exists()) {
+            libs = listFiles(libDir, null, false);
+        } else {
+            libs = Collections.emptyList();
+        }
+        return new ExplodedPlugin(pluginInfo, pluginInfo.getKey(), jarFile, libs);
+    }
 }

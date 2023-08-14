@@ -24,34 +24,34 @@ import org.sonar.updatecenter.common.Version;
 
 public class ScannerPlugin {
 
-  private final String key;
-  private final long updatedAt;
-  private final PluginInfo info;
+    private final String key;
+    private final long updatedAt;
+    private final PluginInfo info;
 
-  public ScannerPlugin(String key, long updatedAt, PluginInfo info) {
-    this.key = key;
-    this.updatedAt = updatedAt;
-    this.info = info;
-  }
+    public ScannerPlugin(String key, long updatedAt, PluginInfo info) {
+        this.key = key;
+        this.updatedAt = updatedAt;
+        this.info = info;
+    }
 
-  public PluginInfo getInfo() {
-    return info;
-  }
+    public PluginInfo getInfo() {
+        return info;
+    }
 
-  public String getName() {
-    return info.getName();
-  }
+    public String getName() {
+        return info.getName();
+    }
 
-  public Version getVersion() {
-    return info.getVersion();
-  }
+    public Version getVersion() {
+        return info.getVersion();
+    }
 
-  public String getKey() {
-    return key;
-  }
+    public String getKey() {
+        return key;
+    }
 
-  public long getUpdatedAt() {
-    return updatedAt;
-  }
+    public long getUpdatedAt() {
+        return updatedAt;
+    }
 
 }

@@ -51,7 +51,6 @@ public final class Batch {
         }
         if (builder.isEnableLoggingConfiguration()) {
             loggingConfig = new LoggingConfiguration(builder.environment).setProperties(globalProperties);
-
             if (builder.logOutput != null) {
                 loggingConfig.setLogOutput(builder.logOutput);
             }
@@ -102,7 +101,6 @@ public final class Batch {
         if (loggingConfig.isVerbose()) {
             return t;
         }
-
         Throwable y = t;
         do {
             if (y instanceof MessageException) {
@@ -110,7 +108,6 @@ public final class Batch {
             }
             y = y.getCause();
         } while (y != null);
-
         return t;
     }
 
@@ -134,6 +131,7 @@ public final class Batch {
     }
 
     public static final class Builder {
+
         private Map<String, String> globalProperties;
         private EnvironmentInformation environment;
         private List<Object> components = new ArrayList<>();

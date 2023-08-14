@@ -58,6 +58,7 @@ import org.sonar.scanner.repository.settings.GlobalSettingsLoader;
 import org.sonar.scanner.scan.ProjectScanContainer;
 
 public class GlobalContainer extends ComponentContainer {
+
     private static final Logger LOG = Loggers.get(GlobalContainer.class);
     private final Map<String, String> scannerProperties;
 
@@ -128,7 +129,6 @@ public class GlobalContainer extends ComponentContainer {
     protected void doAfterStart() {
         installPlugins();
         loadCoreExtensions();
-
         long startTime = System.currentTimeMillis();
         String taskKey = StringUtils.defaultIfEmpty(scannerProperties.get(CoreProperties.TASK), CoreProperties.SCAN_TASK);
         if (taskKey.equals("views")) {
@@ -142,7 +142,6 @@ public class GlobalContainer extends ComponentContainer {
             throw MessageException.of("The preview mode, along with the 'sonar.analysis.mode' parameter, is no more supported. You should stop using this parameter.");
         }
         new ProjectScanContainer(this).execute();
-
         LOG.info("Analysis total time: {}", formatTime(System.currentTimeMillis() - startTime));
     }
 
@@ -174,5 +173,4 @@ public class GlobalContainer extends ComponentContainer {
         }
         return String.format(format, h, m, s, ms);
     }
-
 }

@@ -33,19 +33,19 @@ import org.sonar.api.server.ServerSide;
 @ComputeEngineSide
 public interface PluginRepository {
 
-  Collection<PluginInfo> getPluginInfos();
+    Collection<PluginInfo> getPluginInfos();
 
-  /**
-   * @throws IllegalArgumentException if the plugin does not exist
-   */
-  PluginInfo getPluginInfo(String key);
+    /**
+     * @throws IllegalArgumentException if the plugin does not exist
+     */
+    PluginInfo getPluginInfo(String key);
 
-  /**
-   * @return the instance of {@link Plugin} for the given plugin key. Never return null.
-   */
-  Plugin getPluginInstance(String key);
+    /**
+     * @return the instance of {@link Plugin} for the given plugin key. Never return null.
+     */
+    Plugin getPluginInstance(String key);
 
-  Collection<Plugin> getPluginInstances();
+    Collection<Plugin> getPluginInstances();
 
-  boolean hasPlugin(String key);
+    boolean hasPlugin(String key);
 }
