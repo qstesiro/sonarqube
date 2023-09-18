@@ -32,166 +32,166 @@ import static org.sonar.api.utils.log.ConsoleFormatter.format;
  */
 class ConsoleLogger extends BaseLogger {
 
-  private final PrintStream stream;
+    private final PrintStream stream;
 
-  ConsoleLogger() {
-    this.stream = System.out;
-  }
-
-  ConsoleLogger(PrintStream stream) {
-    this.stream = stream;
-  }
-
-  @Override
-  public boolean isTraceEnabled() {
-    return Loggers.getFactory().getLevel() == LoggerLevel.TRACE;
-  }
-
-  @Override
-  protected void doTrace(String msg) {
-    if (isTraceEnabled()) {
-      log("TRACE", msg);
+    ConsoleLogger() {
+        this.stream = System.out;
     }
-  }
 
-  @Override
-  protected void doTrace(String pattern, @Nullable Object arg) {
-    if (isTraceEnabled()) {
-      doTrace(format(pattern, arg));
+    ConsoleLogger(PrintStream stream) {
+        this.stream = stream;
     }
-  }
 
-  @Override
-  protected void doTrace(String pattern, @Nullable Object arg1, @Nullable Object arg2) {
-    if (isTraceEnabled()) {
-      doTrace(format(pattern, arg1, arg2));
+    @Override
+    public boolean isTraceEnabled() {
+        return Loggers.getFactory().getLevel() == LoggerLevel.TRACE;
     }
-  }
 
-  @Override
-  protected void doTrace(String pattern, Object... args) {
-    if (isTraceEnabled()) {
-      doTrace(format(pattern, args));
+    @Override
+    protected void doTrace(String msg) {
+        if (isTraceEnabled()) {
+            log("TRACE", msg);
+        }
     }
-  }
 
-  @Override
-  public boolean isDebugEnabled() {
-    LoggerLevel level = Loggers.getFactory().getLevel();
-    return level == LoggerLevel.TRACE || level == LoggerLevel.DEBUG;
-  }
-
-  @Override
-  protected void doDebug(String msg) {
-    if (isDebugEnabled()) {
-      log("DEBUG", msg);
+    @Override
+    protected void doTrace(String pattern, @Nullable Object arg) {
+        if (isTraceEnabled()) {
+            doTrace(format(pattern, arg));
+        }
     }
-  }
 
-  @Override
-  protected void doDebug(String pattern, @Nullable Object arg) {
-    if (isDebugEnabled()) {
-      doDebug(format(pattern, arg));
+    @Override
+    protected void doTrace(String pattern, @Nullable Object arg1, @Nullable Object arg2) {
+        if (isTraceEnabled()) {
+            doTrace(format(pattern, arg1, arg2));
+        }
     }
-  }
 
-  @Override
-  protected void doDebug(String pattern, @Nullable Object arg1, @Nullable Object arg2) {
-    if (isDebugEnabled()) {
-      doDebug(format(pattern, arg1, arg2));
+    @Override
+    protected void doTrace(String pattern, Object... args) {
+        if (isTraceEnabled()) {
+            doTrace(format(pattern, args));
+        }
     }
-  }
 
-  @Override
-  protected void doDebug(String pattern, Object... args) {
-    if (isDebugEnabled()) {
-      doDebug(format(pattern, args));
+    @Override
+    public boolean isDebugEnabled() {
+        LoggerLevel level = Loggers.getFactory().getLevel();
+        return level == LoggerLevel.TRACE || level == LoggerLevel.DEBUG;
     }
-  }
 
-  @Override
-  protected void doInfo(String msg) {
-    log("INFO ", msg);
-  }
+    @Override
+    protected void doDebug(String msg) {
+        if (isDebugEnabled()) {
+            log("DEBUG", msg);
+        }
+    }
 
-  @Override
-  protected void doInfo(String pattern, @Nullable Object arg) {
-    doInfo(format(pattern, arg));
-  }
+    @Override
+    protected void doDebug(String pattern, @Nullable Object arg) {
+        if (isDebugEnabled()) {
+            doDebug(format(pattern, arg));
+        }
+    }
 
-  @Override
-  protected void doInfo(String pattern, @Nullable Object arg1, @Nullable Object arg2) {
-    doInfo(format(pattern, arg1, arg2));
-  }
+    @Override
+    protected void doDebug(String pattern, @Nullable Object arg1, @Nullable Object arg2) {
+        if (isDebugEnabled()) {
+            doDebug(format(pattern, arg1, arg2));
+        }
+    }
 
-  @Override
-  protected void doInfo(String pattern, Object... args) {
-    doInfo(format(pattern, args));
-  }
+    @Override
+    protected void doDebug(String pattern, Object... args) {
+        if (isDebugEnabled()) {
+            doDebug(format(pattern, args));
+        }
+    }
 
-  @Override
-  protected void doWarn(String msg) {
-    log("WARN ", msg);
-  }
+    @Override
+    protected void doInfo(String msg) {
+        log("INFO ", msg);
+    }
 
-  @Override
-  void doWarn(String msg, Throwable thrown) {
-    doWarn(msg);
-    thrown.printStackTrace();
-  }
+    @Override
+    protected void doInfo(String pattern, @Nullable Object arg) {
+        doInfo(format(pattern, arg));
+    }
 
-  @Override
-  protected void doWarn(String pattern, @Nullable Object arg) {
-    doWarn(format(pattern, arg));
-  }
+    @Override
+    protected void doInfo(String pattern, @Nullable Object arg1, @Nullable Object arg2) {
+        doInfo(format(pattern, arg1, arg2));
+    }
 
-  @Override
-  protected void doWarn(String pattern, @Nullable Object arg1, @Nullable Object arg2) {
-    doWarn(format(pattern, arg1, arg2));
-  }
+    @Override
+    protected void doInfo(String pattern, Object... args) {
+        doInfo(format(pattern, args));
+    }
 
-  @Override
-  protected void doWarn(String pattern, Object... args) {
-    doWarn(format(pattern, args));
-  }
+    @Override
+    protected void doWarn(String msg) {
+        log("WARN ", msg);
+    }
 
-  @Override
-  protected void doError(String msg) {
-    log("ERROR", msg);
-  }
+    @Override
+    void doWarn(String msg, Throwable thrown) {
+        doWarn(msg);
+        thrown.printStackTrace();
+    }
 
-  @Override
-  protected void doError(String pattern, @Nullable Object arg) {
-    doError(format(pattern, arg));
-  }
+    @Override
+    protected void doWarn(String pattern, @Nullable Object arg) {
+        doWarn(format(pattern, arg));
+    }
 
-  @Override
-  protected void doError(String pattern, @Nullable Object arg1, @Nullable Object arg2) {
-    doError(format(pattern, arg1, arg2));
-  }
+    @Override
+    protected void doWarn(String pattern, @Nullable Object arg1, @Nullable Object arg2) {
+        doWarn(format(pattern, arg1, arg2));
+    }
 
-  @Override
-  protected void doError(String pattern, Object... args) {
-    doError(format(pattern, args));
-  }
+    @Override
+    protected void doWarn(String pattern, Object... args) {
+        doWarn(format(pattern, args));
+    }
 
-  @Override
-  public void doError(String msg, Throwable thrown) {
-    doError(msg);
-    thrown.printStackTrace();
-  }
+    @Override
+    protected void doError(String msg) {
+        log("ERROR", msg);
+    }
 
-  @Override
-  public boolean setLevel(LoggerLevel level) {
-    return false;
-  }
+    @Override
+    protected void doError(String pattern, @Nullable Object arg) {
+        doError(format(pattern, arg));
+    }
 
-  @Override
-  public LoggerLevel getLevel() {
-    return Loggers.getFactory().getLevel();
-  }
+    @Override
+    protected void doError(String pattern, @Nullable Object arg1, @Nullable Object arg2) {
+        doError(format(pattern, arg1, arg2));
+    }
 
-  private void log(String level, String msg) {
-    this.stream.println(String.format("%s %s", level, msg));
-  }
+    @Override
+    protected void doError(String pattern, Object... args) {
+        doError(format(pattern, args));
+    }
+
+    @Override
+    public void doError(String msg, Throwable thrown) {
+        doError(msg);
+        thrown.printStackTrace();
+    }
+
+    @Override
+    public boolean setLevel(LoggerLevel level) {
+        return false;
+    }
+
+    @Override
+    public LoggerLevel getLevel() {
+        return Loggers.getFactory().getLevel();
+    }
+
+    private void log(String level, String msg) {
+        this.stream.println(String.format("%s %s", level, msg));
+    }
 }

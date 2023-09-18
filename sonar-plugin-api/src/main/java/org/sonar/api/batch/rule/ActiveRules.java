@@ -40,35 +40,35 @@ import java.util.Collection;
 @ScannerSide
 public interface ActiveRules {
 
-  /**
-   * Find a {@link ActiveRule} by the associated rule key. <code>null</code>
-   * is returned if the rule does not exist or if the rule is not activated
-   * on any Quality profile associated with the project.
-   */
-  @CheckForNull
-  ActiveRule find(RuleKey ruleKey);
+    /**
+     * Find a {@link ActiveRule} by the associated rule key. <code>null</code>
+     * is returned if the rule does not exist or if the rule is not activated
+     * on any Quality profile associated with the project.
+     */
+    @CheckForNull
+    ActiveRule find(RuleKey ruleKey);
 
-  /**
-   * All the active rules, whatever their repository and related language.
-   */
-  Collection<ActiveRule> findAll();
+    /**
+     * All the active rules, whatever their repository and related language.
+     */
+    Collection<ActiveRule> findAll();
 
-  /**
-   * The active rules for a given repository, like <code>findbugs</code>
-   */
-  Collection<ActiveRule> findByRepository(String repository);
+    /**
+     * The active rules for a given repository, like <code>findbugs</code>
+     */
+    Collection<ActiveRule> findByRepository(String repository);
 
-  /**
-   * The active rules for a given language, like <code>java</code>
-   */
-  Collection<ActiveRule> findByLanguage(String language);
+    /**
+     * The active rules for a given language, like <code>java</code>
+     */
+    Collection<ActiveRule> findByLanguage(String language);
 
-  /**
-   * Find a {@link ActiveRule} by the associated internal key. <code>null</code>
-   * is returned if the rule does not exist or if the rule is not activated
-   * on any Quality profile associated with the project.
-   */
-  @CheckForNull
-  ActiveRule findByInternalKey(String repository, String internalKey);
+    /**
+     * Find a {@link ActiveRule} by the associated internal key. <code>null</code>
+     * is returned if the rule does not exist or if the rule is not activated
+     * on any Quality profile associated with the project.
+     */
+    @CheckForNull
+    ActiveRule findByInternalKey(String repository, String internalKey);
 
 }

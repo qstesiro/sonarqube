@@ -25,15 +25,15 @@ import java.util.Objects;
 
 class ConsoleFormatter {
 
-  private ConsoleFormatter() {
-    // only static methods
-  }
-
-  static String format(String pattern, Object... args) {
-    String result = pattern;
-    for (Object arg : args) {
-      result = StringUtils.replaceOnce(result, "{}", Objects.toString(arg));
+    private ConsoleFormatter() {
+        // only static methods
     }
-    return result;
-  }
+
+    static String format(String pattern, Object... args) {
+        String result = pattern;
+        for (Object arg : args) {
+            result = StringUtils.replaceOnce(result, "{}", Objects.toString(arg));
+        }
+        return result;
+    }
 }

@@ -21,22 +21,22 @@ package org.sonar.api.utils.log;
 
 class ConsoleLoggers extends Loggers {
 
-  private LoggerLevel level = LoggerLevel.INFO;
+    private LoggerLevel level = LoggerLevel.INFO;
 
-  @Override
-  protected Logger newInstance(String name) {
-    return new ConsoleLogger();
-  }
+    @Override
+    protected Logger newInstance(String name) {
+        return new ConsoleLogger();
+    }
 
-  @Override
-  protected LoggerLevel getLevel() {
-    return level;
-  }
+    @Override
+    protected LoggerLevel getLevel() {
+        return level;
+    }
 
-  @Override
-  protected void setLevel(LoggerLevel level) {
-    this.level = level;
-  }
+    @Override
+    protected void setLevel(LoggerLevel level) {
+        this.level = level;
+    }
 
 
 }

@@ -24,34 +24,34 @@ package org.sonar.api.utils.log;
  */
 public abstract class Loggers {
 
-  private static volatile Loggers factory;
+    private static volatile Loggers factory;
 
-  static {
-    try {
-      Class.forName("ch.qos.logback.classic.Logger");
-      factory = new LogbackLoggers();
-    } catch (Throwable e) {
-      // no slf4j -> testing environment
-      factory = new ConsoleLoggers();
+    static {
+        try {
+            Class.forName("ch.qos.logback.classic.Logger");
+            factory = new LogbackLoggers();
+        } catch (Throwable e) {
+            // no slf4j -> testing environment
+            factory = new ConsoleLoggers();
+        }
     }
-  }
 
-  public static Logger get(Class<?> name) {
-    return factory.newInstance(name.getName());
-  }
+    public static Logger get(Class<?> name) {
+        return factory.newInstance(name.getName());
+    }
 
-  public static Logger get(String name) {
-    return factory.newInstance(name);
-  }
+    public static Logger get(String name) {
+        return factory.newInstance(name);
+    }
 
-  static Loggers getFactory() {
-    return factory;
-  }
+    static Loggers getFactory() {
+        return factory;
+    }
 
-  protected abstract Logger newInstance(String name);
+    protected abstract Logger newInstance(String name);
 
-  protected abstract LoggerLevel getLevel();
+    protected abstract LoggerLevel getLevel();
 
-  protected abstract void setLevel(LoggerLevel level);
+    protected abstract void setLevel(LoggerLevel level);
 
 }

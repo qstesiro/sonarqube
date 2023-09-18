@@ -32,49 +32,49 @@ import org.sonar.api.rule.RuleKey;
 @Immutable
 public interface ActiveRule {
 
-  RuleKey ruleKey();
+    RuleKey ruleKey();
 
-  /**
-   * Non-null severity.
-   * @see org.sonar.api.rule.Severity
-   */
-  String severity();
+    /**
+     * Non-null severity.
+     * @see org.sonar.api.rule.Severity
+     */
+    String severity();
 
-  /**
-   * Language of rule, for example <code>java</code>
-   */
-  String language();
+    /**
+     * Language of rule, for example <code>java</code>
+     */
+    String language();
 
-  /**
-   * Value of given parameter. Returns <code>null</code> if the parameter key does not
-   * exist on the rule or if the parameter has no value nor default value.
-   */
-  @CheckForNull
-  String param(String key);
+    /**
+     * Value of given parameter. Returns <code>null</code> if the parameter key does not
+     * exist on the rule or if the parameter has no value nor default value.
+     */
+    @CheckForNull
+    String param(String key);
 
-  /**
-   * Immutable parameter values. Returns an empty map if no parameters are defined.
-   */
-  Map<String, String> params();
+    /**
+     * Immutable parameter values. Returns an empty map if no parameters are defined.
+     */
+    Map<String, String> params();
 
-  /**
-   * Optional key declared and used by the underlying rule engine. As an example
-   * the key of a Checkstyle rule looks like <code>com.puppycrawl.tools.checkstyle.checks.FooCheck</code>
-   * whereas its internal key can be <code>Checker/TreeWalker/Foo</code>.
-   */
-  @CheckForNull
-  String internalKey();
+    /**
+     * Optional key declared and used by the underlying rule engine. As an example
+     * the key of a Checkstyle rule looks like <code>com.puppycrawl.tools.checkstyle.checks.FooCheck</code>
+     * whereas its internal key can be <code>Checker/TreeWalker/Foo</code>.
+     */
+    @CheckForNull
+    String internalKey();
 
-  /**
-   * Optional rule key of the template rule.
-   * @since 4.5.3
-   */
-  @CheckForNull
-  String templateRuleKey();
+    /**
+     * Optional rule key of the template rule.
+     * @since 4.5.3
+     */
+    @CheckForNull
+    String templateRuleKey();
 
-  /**
-   * Key of the quality profile the rule belongs to.
-   * @since 7.5
-   */
-  String qpKey();
+    /**
+     * Key of the quality profile the rule belongs to.
+     * @since 7.5
+     */
+    String qpKey();
 }
