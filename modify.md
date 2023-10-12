@@ -21,6 +21,7 @@
 - 修改接口支持按类型查询扫描
   - server/sonar-db-dao/src/main/java/org/sonar/db/component/ComponentDto.java
   - server/sonar-db-dao/src/main/java/org/sonar/db/component/SnapshotQuery.java
+  - server/sonar-db-dao/src/main/resources/org/sonar/db/component/SnapshotMapper.xml
   - server/sonar-webserver-webapi/src/main/java/org/sonar/server/projectanalysis/ws/ScanType.java
   - server/sonar-webserver-webapi/src/main/java/org/sonar/server/projectanalysis/ws/SearchAction.java
   - server/sonar-webserver-webapi/src/main/java/org/sonar/server/projectanalysis/ws/SearchData.java

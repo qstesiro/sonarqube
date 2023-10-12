@@ -30,6 +30,7 @@ npm-debug.log*
 npm.tar.gz
 yarn-debug.log*
 yarn-error.log*
+**/*.ts
 
 # ---- Eclipse
 .classpath
@@ -69,4 +70,3 @@ scripts/patches/*license*.txt
 !scripts/patches/debug_web.sh
 !scripts/patches/postgres.sh
 gherkin-features/
-**/*.ts
