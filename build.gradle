@@ -62,6 +62,7 @@ dependencyCheck {
 }
 
 allprojects {
+
     apply plugin: 'com.jfrog.artifactory'
     apply plugin: 'maven-publish'
 
@@ -146,6 +147,7 @@ allprojects {
 }
 
 apply plugin: 'org.sonarqube'
+
 sonarqube {
     properties {
         property 'sonar.projectName', projectTitle

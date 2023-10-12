@@ -58,188 +58,188 @@ import static org.sonar.server.exceptions.NotFoundException.checkFound;
 @ServerSide
 public class WebServiceEngine implements LocalConnector, Startable {
 
-  private static final Logger LOGGER = Loggers.get(WebServiceEngine.class);
+    private static final Logger LOGGER = Loggers.get(WebServiceEngine.class);
 
-  private final WebService[] webServices;
+    private final WebService[] webServices;
 
-  private WebService.Context context;
+    private WebService.Context context;
 
-  public WebServiceEngine(WebService[] webServices) {
-    this.webServices = webServices;
-  }
-
-  @Override
-  public void start() {
-    context = new WebService.Context();
-    for (WebService webService : webServices) {
-      webService.define(context);
-    }
-  }
-
-  @Override
-  public void stop() {
-    // nothing
-  }
-
-  private WebService.Context getContext() {
-    return requireNonNull(context, "Web services has not yet been initialized");
-  }
-
-  public List<WebService.Controller> controllers() {
-    return getContext().controllers();
-  }
-
-  @Override
-  public LocalResponse call(LocalRequest request) {
-    DefaultLocalResponse localResponse = new DefaultLocalResponse();
-    execute(new LocalRequestAdapter(request), localResponse);
-    return localResponse;
-  }
-
-  public void execute(Request request, Response response) {
-    try {
-      ActionExtractor actionExtractor = new ActionExtractor(request.getPath());
-      WebService.Action action = getAction(actionExtractor);
-      checkFound(action, "Unknown url : %s", request.getPath());
-      if (request instanceof ValidatingRequest) {
-        ((ValidatingRequest) request).setAction(action);
-        ((ValidatingRequest) request).setLocalConnector(this);
-      }
-      checkActionExtension(actionExtractor.getExtension());
-      verifyRequest(action, request);
-      action.handler().handle(request, response);
-    } catch (IllegalArgumentException e) {
-      sendErrors(request, response, e, 400, singletonList(e.getMessage()));
-    } catch (BadRequestException e) {
-      sendErrors(request, response, e, 400, e.errors());
-    } catch (ServerException e) {
-      sendErrors(request, response, e, e.httpCode(), singletonList(e.getMessage()));
-    } catch (Exception e) {
-      sendErrors(request, response, e, 500, singletonList("An error has occurred. Please contact your administrator"));
-    }
-  }
-
-  @CheckForNull
-  private WebService.Action getAction(ActionExtractor actionExtractor) {
-    String controllerPath = actionExtractor.getController();
-    String actionKey = actionExtractor.getAction();
-    WebService.Controller controller = getContext().controller(controllerPath);
-    return controller == null ? null : controller.action(actionKey);
-  }
-
-  private static void sendErrors(Request request, Response response, Exception exception, int status, List<String> errors) {
-    if (isRequestAbortedByClient(exception)) {
-      // do not pollute logs. We can't do anything -> use DEBUG level
-      // see org.sonar.server.ws.ServletResponse#output()
-      LOGGER.debug(String.format("Request %s has been aborted by client", request), exception);
-      if (!isResponseCommitted(response)) {
-        // can be useful for access.log
-        response.stream().setStatus(299);
-      }
-      return;
+    public WebServiceEngine(WebService[] webServices) {
+        this.webServices = webServices;
     }
 
-    if (status == 500) {
-      // Sending exception message into response is a vulnerability. Error must be
-      // displayed only in logs.
-      LOGGER.error("Fail to process request " + request, exception);
+    @Override
+    public void start() {
+        context = new WebService.Context();
+        for (WebService webService : webServices) {
+            webService.define(context);
+        }
     }
 
-    Response.Stream stream = response.stream();
-    if (isResponseCommitted(response)) {
-      // status can't be changed
-      LOGGER.debug(String.format("Request %s failed during response streaming", request), exception);
-      return;
+    @Override
+    public void stop() {
+        // nothing
     }
 
-    // response is not committed, status and content can be changed to return the error
-    if (stream instanceof ServletResponse.ServletStream) {
-      ((ServletResponse.ServletStream) stream).reset();
-    }
-    stream.setStatus(status);
-    stream.setMediaType(MediaTypes.JSON);
-    try (JsonWriter json = JsonWriter.of(new OutputStreamWriter(stream.output(), StandardCharsets.UTF_8))) {
-      json.beginObject();
-      writeErrors(json, errors);
-      json.endObject();
-    } catch (Exception e) {
-      // Do not hide the potential exception raised in the try block.
-      throw Throwables.propagate(e);
-    }
-  }
-
-  private static boolean isRequestAbortedByClient(Exception exception) {
-    return Throwables.getCausalChain(exception).stream().anyMatch(t -> t instanceof ClientAbortException);
-  }
-
-  private static boolean isResponseCommitted(Response response) {
-    Response.Stream stream = response.stream();
-    // Request has been aborted by the client or the response was partially streamed, nothing can been done as Tomcat has committed the response
-    return stream instanceof ServletResponse.ServletStream && ((ServletResponse.ServletStream) stream).response().isCommitted();
-  }
-
-  public static void writeErrors(JsonWriter json, List<String> errorMessages) {
-    if (errorMessages.isEmpty()) {
-      return;
-    }
-    json.name("errors").beginArray();
-    errorMessages.forEach(message -> {
-      json.beginObject();
-      json.prop("msg", message);
-      json.endObject();
-    });
-    json.endArray();
-  }
-
-  private static void checkActionExtension(@Nullable String actionExtension) {
-    if (isNullOrEmpty(actionExtension)) {
-      return;
-    }
-    checkArgument(SUPPORTED_MEDIA_TYPES_BY_URL_SUFFIX.get(actionExtension.toLowerCase(Locale.ENGLISH)) != null, "Unknown action extension: %s", actionExtension);
-  }
-
-  private static class ActionExtractor {
-    private static final String SLASH = "/";
-    private static final String POINT = ".";
-
-    private final String controller;
-    private final String action;
-    private final String extension;
-    private final String path;
-
-    ActionExtractor(String path) {
-      this.path = path;
-      String pathWithoutExtension = substringBeforeLast(path, POINT);
-      this.controller = extractController(pathWithoutExtension);
-      this.action = substringAfterLast(pathWithoutExtension, SLASH);
-      checkArgument(!action.isEmpty(), "Url is incorrect : '%s'", path);
-      this.extension = substringAfterLast(path, POINT);
+    private WebService.Context getContext() {
+        return requireNonNull(context, "Web services has not yet been initialized");
     }
 
-    private static String extractController(String path) {
-      String controller = substringBeforeLast(path, SLASH);
-      if (controller.startsWith(SLASH)) {
-        return substring(controller, 1);
-      }
-      return controller;
+    public List<WebService.Controller> controllers() {
+        return getContext().controllers();
     }
 
-    String getController() {
-      return controller;
+    @Override
+    public LocalResponse call(LocalRequest request) {
+        DefaultLocalResponse localResponse = new DefaultLocalResponse();
+        execute(new LocalRequestAdapter(request), localResponse);
+        return localResponse;
     }
 
-    String getAction() {
-      return action;
+    public void execute(Request request, Response response) {
+        try {
+            ActionExtractor actionExtractor = new ActionExtractor(request.getPath());
+            WebService.Action action = getAction(actionExtractor);
+            checkFound(action, "Unknown url : %s", request.getPath());
+            if (request instanceof ValidatingRequest) {
+                ((ValidatingRequest) request).setAction(action);
+                ((ValidatingRequest) request).setLocalConnector(this);
+            }
+            checkActionExtension(actionExtractor.getExtension());
+            verifyRequest(action, request);
+            action.handler().handle(request, response);
+        } catch (IllegalArgumentException e) {
+            sendErrors(request, response, e, 400, singletonList(e.getMessage()));
+        } catch (BadRequestException e) {
+            sendErrors(request, response, e, 400, e.errors());
+        } catch (ServerException e) {
+            sendErrors(request, response, e, e.httpCode(), singletonList(e.getMessage()));
+        } catch (Exception e) {
+            sendErrors(request, response, e, 500, singletonList("An error has occurred. Please contact your administrator"));
+        }
     }
 
     @CheckForNull
-    String getExtension() {
-      return extension;
+    private WebService.Action getAction(ActionExtractor actionExtractor) {
+        String controllerPath = actionExtractor.getController();
+        String actionKey = actionExtractor.getAction();
+        WebService.Controller controller = getContext().controller(controllerPath);
+        return controller == null ? null : controller.action(actionKey);
     }
 
-    String getPath() {
-      return path;
+    private static void sendErrors(Request request, Response response, Exception exception, int status, List<String> errors) {
+        if (isRequestAbortedByClient(exception)) {
+            // do not pollute logs. We can't do anything -> use DEBUG level
+            // see org.sonar.server.ws.ServletResponse#output()
+            LOGGER.debug(String.format("Request %s has been aborted by client", request), exception);
+            if (!isResponseCommitted(response)) {
+                // can be useful for access.log
+                response.stream().setStatus(299);
+            }
+            return;
+        }
+
+        if (status == 500) {
+            // Sending exception message into response is a vulnerability. Error must be
+            // displayed only in logs.
+            LOGGER.error("Fail to process request " + request, exception);
+        }
+
+        Response.Stream stream = response.stream();
+        if (isResponseCommitted(response)) {
+            // status can't be changed
+            LOGGER.debug(String.format("Request %s failed during response streaming", request), exception);
+            return;
+        }
+
+        // response is not committed, status and content can be changed to return the error
+        if (stream instanceof ServletResponse.ServletStream) {
+            ((ServletResponse.ServletStream) stream).reset();
+        }
+        stream.setStatus(status);
+        stream.setMediaType(MediaTypes.JSON);
+        try (JsonWriter json = JsonWriter.of(new OutputStreamWriter(stream.output(), StandardCharsets.UTF_8))) {
+            json.beginObject();
+            writeErrors(json, errors);
+            json.endObject();
+        } catch (Exception e) {
+            // Do not hide the potential exception raised in the try block.
+            throw Throwables.propagate(e);
+        }
     }
-  }
+
+    private static boolean isRequestAbortedByClient(Exception exception) {
+        return Throwables.getCausalChain(exception).stream().anyMatch(t -> t instanceof ClientAbortException);
+    }
+
+    private static boolean isResponseCommitted(Response response) {
+        Response.Stream stream = response.stream();
+        // Request has been aborted by the client or the response was partially streamed, nothing can been done as Tomcat has committed the response
+        return stream instanceof ServletResponse.ServletStream && ((ServletResponse.ServletStream) stream).response().isCommitted();
+    }
+
+    public static void writeErrors(JsonWriter json, List<String> errorMessages) {
+        if (errorMessages.isEmpty()) {
+            return;
+        }
+        json.name("errors").beginArray();
+        errorMessages.forEach(message -> {
+                json.beginObject();
+                json.prop("msg", message);
+                json.endObject();
+            });
+        json.endArray();
+    }
+
+    private static void checkActionExtension(@Nullable String actionExtension) {
+        if (isNullOrEmpty(actionExtension)) {
+            return;
+        }
+        checkArgument(SUPPORTED_MEDIA_TYPES_BY_URL_SUFFIX.get(actionExtension.toLowerCase(Locale.ENGLISH)) != null, "Unknown action extension: %s", actionExtension);
+    }
+
+    private static class ActionExtractor {
+        private static final String SLASH = "/";
+        private static final String POINT = ".";
+
+        private final String controller;
+        private final String action;
+        private final String extension;
+        private final String path;
+
+        ActionExtractor(String path) {
+            this.path = path;
+            String pathWithoutExtension = substringBeforeLast(path, POINT);
+            this.controller = extractController(pathWithoutExtension);
+            this.action = substringAfterLast(pathWithoutExtension, SLASH);
+            checkArgument(!action.isEmpty(), "Url is incorrect : '%s'", path);
+            this.extension = substringAfterLast(path, POINT);
+        }
+
+        private static String extractController(String path) {
+            String controller = substringBeforeLast(path, SLASH);
+            if (controller.startsWith(SLASH)) {
+                return substring(controller, 1);
+            }
+            return controller;
+        }
+
+        String getController() {
+            return controller;
+        }
+
+        String getAction() {
+            return action;
+        }
+
+        @CheckForNull
+        String getExtension() {
+            return extension;
+        }
+
+        String getPath() {
+            return path;
+        }
+    }
 
 }

@@ -30,118 +30,147 @@ import javax.annotation.Generated;
 @Generated("sonar-ws-generator")
 public class SearchRequest {
 
-  private String branch;
-  private String category;
-  private String from;
-  private String p;
-  private String project;
-  private String ps;
-  private String pullRequest;
-  private String to;
+    private String branch;
+    private String buildString;
+    private String category;
+    private String from;
+    private String p;
+    private String project;
+    private String ps;
+    private String pullRequest;
+    private String to;
 
-  /**
-   * This is part of the internal API.
-   * Example value: "feature/my_branch"
-   */
-  public SearchRequest setBranch(String branch) {
-    this.branch = branch;
-    return this;
-  }
+    /**
+     * This is part of the internal API.
+     * Example value: "feature/my_branch"
+     */
+    public SearchRequest setBranch(String branch) {
+        this.branch = branch;
+        return this;
+    }
 
-  public String getBranch() {
-    return branch;
-  }
+    public String getBranch() {
+        return branch;
+    }
 
-  /**
-   * Example value: "OTHER"
-   * Possible values:
-   * <ul>
-   *   <li>"VERSION"</li>
-   *   <li>"OTHER"</li>
-   *   <li>"QUALITY_PROFILE"</li>
-   *   <li>"QUALITY_GATE"</li>
-   * </ul>
-   */
-  public SearchRequest setCategory(String category) {
-    this.category = category;
-    return this;
-  }
+    /**
+     * This is part of the internal API.
+     * Possible values:
+     * <ul>
+     *   <li>"builtin_go"</li>
+     *   <li>"builtin_node"</li>
+     *   <li>"builtin_python"</li>
+     *   <li>"builtin_cpp"</li>
+     *   <li>"builtin_mvn"</li>
+     *   <li>"builtin_gradle"</li>
+     *   <li>"builtin_dotnet"</li>
+     *   <li>"seczone_cs"</li>
+     *   <li>"seczone_sca"</li>
+     *   <li>"sql"</li>
+     * </ul>
+     */
+    public SearchRequest setBuildString(String buildString) {
+        if (buildString != null) {
+            buildString = buildString.toLowerCase();
+        }
+        this.buildString = buildString.toLowerCase();
+        return this;
+    }
 
-  public String getCategory() {
-    return category;
-  }
+    public String getBuildString() {
+        return buildString;
+    }
 
-  /**
-   * Example value: "2013-05-01"
-   */
-  public SearchRequest setFrom(String from) {
-    this.from = from;
-    return this;
-  }
+    /**
+     * Example value: "OTHER"
+     * Possible values:
+     * <ul>
+     *   <li>"VERSION"</li>
+     *   <li>"OTHER"</li>
+     *   <li>"QUALITY_PROFILE"</li>
+     *   <li>"QUALITY_GATE"</li>
+     * </ul>
+     */
+    public SearchRequest setCategory(String category) {
+        this.category = category;
+        return this;
+    }
 
-  public String getFrom() {
-    return from;
-  }
+    public String getCategory() {
+        return category;
+    }
 
-  /**
-   * Example value: "42"
-   */
-  public SearchRequest setP(String p) {
-    this.p = p;
-    return this;
-  }
+    /**
+     * Example value: "2013-05-01"
+     */
+    public SearchRequest setFrom(String from) {
+        this.from = from;
+        return this;
+    }
 
-  public String getP() {
-    return p;
-  }
+    public String getFrom() {
+        return from;
+    }
 
-  /**
-   * This is a mandatory parameter.
-   * Example value: "my_project"
-   */
-  public SearchRequest setProject(String project) {
-    this.project = project;
-    return this;
-  }
+    /**
+     * Example value: "42"
+     */
+    public SearchRequest setP(String p) {
+        this.p = p;
+        return this;
+    }
 
-  public String getProject() {
-    return project;
-  }
+    public String getP() {
+        return p;
+    }
 
-  /**
-   * Example value: "20"
-   */
-  public SearchRequest setPs(String ps) {
-    this.ps = ps;
-    return this;
-  }
+    /**
+     * This is a mandatory parameter.
+     * Example value: "my_project"
+     */
+    public SearchRequest setProject(String project) {
+        this.project = project;
+        return this;
+    }
 
-  public String getPs() {
-    return ps;
-  }
+    public String getProject() {
+        return project;
+    }
 
-  /**
-   * This is part of the internal API.
-   * Example value: "5461"
-   */
-  public SearchRequest setPullRequest(String pullRequest) {
-    this.pullRequest = pullRequest;
-    return this;
-  }
+    /**
+     * Example value: "20"
+     */
+    public SearchRequest setPs(String ps) {
+        this.ps = ps;
+        return this;
+    }
 
-  public String getPullRequest() {
-    return pullRequest;
-  }
+    public String getPs() {
+        return ps;
+    }
 
-  /**
-   * Example value: "2017-10-19 or 2017-10-19T13:00:00+0200"
-   */
-  public SearchRequest setTo(String to) {
-    this.to = to;
-    return this;
-  }
+    /**
+     * This is part of the internal API.
+     * Example value: "5461"
+     */
+    public SearchRequest setPullRequest(String pullRequest) {
+        this.pullRequest = pullRequest;
+        return this;
+    }
 
-  public String getTo() {
-    return to;
-  }
+    public String getPullRequest() {
+        return pullRequest;
+    }
+
+    /**
+     * Example value: "2017-10-19 or 2017-10-19T13:00:00+0200"
+     */
+    public SearchRequest setTo(String to) {
+        this.to = to;
+        return this;
+    }
+
+    public String getTo() {
+        return to;
+    }
 }

@@ -19,31 +19,35 @@
  */
 package org.sonar.server.projectanalysis.ws;
 
-public enum EventCategory {
+public enum ScanType {
 
-    VERSION("Version"),
-    OTHER("Other"),
-    QUALITY_PROFILE("Profile"),
-    QUALITY_GATE("Alert"),
-    DEFINITION_CHANGE("Definition change");
+    builtin_go("builtin_go"),
+    builtin_node("builtin_node"),
+    builtin_python("builtin_python"),
+    builtin_cpp("builtin_cpp"),
+    builtin_mvn("builtin_mvn"),
+    builtin_gradle("builtin_gradle"),
+    builtin_dotnet("builtin_dotnet"),
+    seczone_cs("seczone_cs"),
+    seczone_sca("seczone_sca"),
+    sql("sql");
 
-    private final String label;
+    private final String type;
 
-    EventCategory(String label) {
-        this.label = label;
+    ScanType(String type) {
+        this.type = type;
     }
 
-    public String getLabel() {
-        return label;
+    public String getType() {
+        return type;
     }
 
-    public static EventCategory fromLabel(String label) {
-        for (EventCategory category : values()) {
-            if (category.getLabel().equals(label)) {
-                return category;
+    public static ScanType fromLabel(String type) {
+        for (ScanType e : values()) {
+            if (e.getType().equals(type)) {
+                return e;
             }
         }
-
-        throw new IllegalArgumentException("Unknown event category label '" + label + "'");
+        throw new IllegalArgumentException("Unknown scan type '" + type + "'");
     }
 }

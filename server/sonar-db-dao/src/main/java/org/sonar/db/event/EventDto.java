@@ -28,110 +28,110 @@ import static org.sonar.db.event.EventValidator.checkEventName;
 
 public class EventDto {
 
-  public static final String CATEGORY_VERSION = "Version";
-  public static final String CATEGORY_ALERT = "Alert";
-  public static final String CATEGORY_PROFILE = "Profile";
-  public static final String CATEGORY_DEFINITION_CHANGE = "Definition change";
+    public static final String CATEGORY_VERSION = "Version";
+    public static final String CATEGORY_ALERT = "Alert";
+    public static final String CATEGORY_PROFILE = "Profile";
+    public static final String CATEGORY_DEFINITION_CHANGE = "Definition change";
 
-  private String uuid;
-  private String analysisUuid;
-  private String componentUuid;
-  private String name;
-  private String description;
-  private String category;
-  private Long date;
-  private Long createdAt;
-  private String data;
+    private String uuid;
+    private String analysisUuid;
+    private String componentUuid;
+    private String name;
+    private String description;
+    private String category;
+    private Long date;
+    private Long createdAt;
+    private String data;
 
-  public String getUuid() {
-    return uuid;
-  }
+    public String getUuid() {
+        return uuid;
+    }
 
-  public EventDto setUuid(String uuid) {
-    this.uuid = uuid;
-    return this;
-  }
+    public EventDto setUuid(String uuid) {
+        this.uuid = uuid;
+        return this;
+    }
 
-  public String getAnalysisUuid() {
-    return analysisUuid;
-  }
+    public String getAnalysisUuid() {
+        return analysisUuid;
+    }
 
-  public EventDto setAnalysisUuid(String analysisUuid) {
-    this.analysisUuid = analysisUuid;
-    return this;
-  }
+    public EventDto setAnalysisUuid(String analysisUuid) {
+        this.analysisUuid = analysisUuid;
+        return this;
+    }
 
-  public String getComponentUuid() {
-    return componentUuid;
-  }
+    public String getComponentUuid() {
+        return componentUuid;
+    }
 
-  public EventDto setComponentUuid(String componentUuid) {
-    this.componentUuid = componentUuid;
-    return this;
-  }
+    public EventDto setComponentUuid(String componentUuid) {
+        this.componentUuid = componentUuid;
+        return this;
+    }
 
-  @CheckForNull
-  public String getName() {
-    return name;
-  }
+    @CheckForNull
+    public String getName() {
+        return name;
+    }
 
-  /**
-   * The name of an event should not be null, but we must accept null values as the DB column is not nullable
-   */
-  public EventDto setName(@Nullable String name) {
-    this.name = checkEventName(name);
-    return this;
-  }
+    /**
+     * The name of an event should not be null, but we must accept null values as the DB column is not nullable
+     */
+    public EventDto setName(@Nullable String name) {
+        this.name = checkEventName(name);
+        return this;
+    }
 
-  @CheckForNull
-  public String getCategory() {
-    return category;
-  }
+    @CheckForNull
+    public String getCategory() {
+        return category;
+    }
 
-  /**
-   * The category of an event should not be null, but we must accept null values as the DB column is not nullable
-   */
-  public EventDto setCategory(@Nullable String category) {
-    this.category = checkEventCategory(category);
-    return this;
-  }
+    /**
+     * The category of an event should not be null, but we must accept null values as the DB column is not nullable
+     */
+    public EventDto setCategory(@Nullable String category) {
+        this.category = checkEventCategory(category);
+        return this;
+    }
 
-  public Long getCreatedAt() {
-    return createdAt;
-  }
+    public Long getCreatedAt() {
+        return createdAt;
+    }
 
-  public EventDto setCreatedAt(Long createdAt) {
-    this.createdAt = createdAt;
-    return this;
-  }
+    public EventDto setCreatedAt(Long createdAt) {
+        this.createdAt = createdAt;
+        return this;
+    }
 
-  @CheckForNull
-  public String getData() {
-    return data;
-  }
+    @CheckForNull
+    public String getData() {
+        return data;
+    }
 
-  public EventDto setData(@Nullable String data) {
-    this.data = data;
-    return this;
-  }
+    public EventDto setData(@Nullable String data) {
+        this.data = data;
+        return this;
+    }
 
-  public Long getDate() {
-    return date;
-  }
+    public Long getDate() {
+        return date;
+    }
 
-  public EventDto setDate(Long date) {
-    this.date = date;
-    return this;
-  }
+    public EventDto setDate(Long date) {
+        this.date = date;
+        return this;
+    }
 
-  @CheckForNull
-  public String getDescription() {
-    return description;
-  }
+    @CheckForNull
+    public String getDescription() {
+        return description;
+    }
 
-  public EventDto setDescription(@Nullable String description) {
-    this.description = checkEventDescription(description);
-    return this;
-  }
+    public EventDto setDescription(@Nullable String description) {
+        this.description = checkEventDescription(description);
+        return this;
+    }
 
 }

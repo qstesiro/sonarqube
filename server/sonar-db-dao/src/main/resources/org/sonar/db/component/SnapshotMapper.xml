@@ -72,6 +72,9 @@
       <if test="query.status != null">
         AND s.status=#{query.status,jdbcType=VARCHAR}
       </if>
+      <if test="query.buildString != null">
+        AND s.build_string=#{query.buildString,jdbcType=VARCHAR}
+      </if>
       <if test="query.projectVersion != null">
         AND s.version=#{query.projectVersion,jdbcType=VARCHAR}
       </if>
@@ -187,4 +190,3 @@
     )
   </insert>
 </mapper>
-

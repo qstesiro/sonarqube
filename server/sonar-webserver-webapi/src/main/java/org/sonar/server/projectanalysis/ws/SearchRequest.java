@@ -24,130 +24,149 @@ import javax.annotation.Nullable;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
 
 class SearchRequest {
-  static final int DEFAULT_PAGE_SIZE = 100;
-  static final int MAX_SIZE = 500;
 
-  private final String project;
-  private final String branch;
-  private final String pullRequest;
-  private final EventCategory category;
-  private final int page;
-  private final int pageSize;
-  private final String from;
-  private final String to;
+    static final int DEFAULT_PAGE_SIZE = 100;
+    static final int MAX_SIZE = 500;
 
-  private SearchRequest(Builder builder) {
-    this.project = builder.project;
-    this.branch = builder.branch;
-    this.pullRequest = builder.pullRequest;
-    this.category = builder.category;
-    this.page = builder.page;
-    this.pageSize = builder.pageSize;
-    this.from = builder.from;
-    this.to = builder.to;
-  }
+    private final String project;
+    private final String branch;
+    private final String buildString;
+    private final String pullRequest;
+    private final EventCategory category;
+    private final int page;
+    private final int pageSize;
+    private final String from;
+    private final String to;
 
-  public String getProject() {
-    return project;
-  }
-
-  @CheckForNull
-  public String getBranch() {
-    return branch;
-  }
-
-  @CheckForNull
-  public String getPullRequest() {
-    return pullRequest;
-  }
-
-  @CheckForNull
-  public EventCategory getCategory() {
-    return category;
-  }
-
-  public int getPage() {
-    return page;
-  }
-
-  public int getPageSize() {
-    return pageSize;
-  }
-
-  @CheckForNull
-  public String getFrom() {
-    return from;
-  }
-
-  @CheckForNull
-  public String getTo() {
-    return to;
-  }
-
-  public static Builder builder() {
-    return new Builder();
-  }
-
-  public static class Builder {
-    private String project;
-    private String branch;
-    private String pullRequest;
-    private EventCategory category;
-    private int page = 1;
-    private int pageSize = DEFAULT_PAGE_SIZE;
-    private String from;
-    private String to;
-
-    private Builder() {
-      // enforce static factory method
+    private SearchRequest(Builder builder) {
+        this.project = builder.project;
+        this.branch = builder.branch;
+        this.buildString = builder.buildString;
+        this.pullRequest = builder.pullRequest;
+        this.category = builder.category;
+        this.page = builder.page;
+        this.pageSize = builder.pageSize;
+        this.from = builder.from;
+        this.to = builder.to;
     }
 
-    public Builder setProject(String project) {
-      this.project = project;
-      return this;
+    public String getProject() {
+        return project;
     }
 
-    public Builder setBranch(@Nullable String branch) {
-      this.branch = branch;
-      return this;
+    @CheckForNull
+    public String getBranch() {
+        return branch;
     }
 
-    public Builder setPullRequest(@Nullable String pullRequest) {
-      this.pullRequest = pullRequest;
-      return this;
+    @CheckForNull
+    public String getBuildString() {
+        return buildString;
     }
 
-    public Builder setCategory(@Nullable EventCategory category) {
-      this.category = category;
-      return this;
+    @CheckForNull
+    public String getPullRequest() {
+        return pullRequest;
     }
 
-    public Builder setPage(int page) {
-      this.page = page;
-      return this;
+    @CheckForNull
+    public EventCategory getCategory() {
+        return category;
     }
 
-    public Builder setPageSize(int pageSize) {
-      this.pageSize = pageSize;
-      return this;
+    public int getPage() {
+        return page;
     }
 
-    public Builder setFrom(@Nullable String from) {
-      this.from = from;
-      return this;
+    public int getPageSize() {
+        return pageSize;
     }
 
-    public Builder setTo(@Nullable String to) {
-      this.to = to;
-      return this;
+    @CheckForNull
+    public String getFrom() {
+        return from;
     }
 
-    public SearchRequest build() {
-      requireNonNull(project, "Project is required");
-      checkArgument(pageSize <= MAX_SIZE, "Page size must be lower than or equal to " + MAX_SIZE);
-      return new SearchRequest(this);
+    @CheckForNull
+    public String getTo() {
+        return to;
     }
-  }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+
+        private String project;
+        private String branch;
+        private String buildString;
+        private String pullRequest;
+        private EventCategory category;
+        private int page = 1;
+        private int pageSize = DEFAULT_PAGE_SIZE;
+        private String from;
+        private String to;
+
+        private Builder() {
+            // enforce static factory method
+        }
+
+        public Builder setProject(String project) {
+            this.project = project;
+            return this;
+        }
+
+        public Builder setBranch(@Nullable String branch) {
+            this.branch = branch;
+            return this;
+        }
+
+        public Builder setBuildString(@Nullable String buildString) {
+            if (buildString != null) {
+                buildString = buildString.toLowerCase();
+            }
+            this.buildString = buildString;
+            return this;
+        }
+
+        public Builder setPullRequest(@Nullable String pullRequest) {
+            this.pullRequest = pullRequest;
+            return this;
+        }
+
+        public Builder setCategory(@Nullable EventCategory category) {
+            this.category = category;
+            return this;
+        }
+
+        public Builder setPage(int page) {
+            this.page = page;
+            return this;
+        }
+
+        public Builder setPageSize(int pageSize) {
+            this.pageSize = pageSize;
+            return this;
+        }
+
+        public Builder setFrom(@Nullable String from) {
+            this.from = from;
+            return this;
+        }
+
+        public Builder setTo(@Nullable String to) {
+            this.to = to;
+            return this;
+        }
+
+        public SearchRequest build() {
+            requireNonNull(project, "Project is required");
+            checkArgument(pageSize <= MAX_SIZE, "Page size must be lower than or equal to " + MAX_SIZE);
+            return new SearchRequest(this);
+        }
+    }
 }

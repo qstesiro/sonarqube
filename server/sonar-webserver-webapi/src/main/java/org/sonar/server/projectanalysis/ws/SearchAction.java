@@ -19,6 +19,8 @@
  */
 package org.sonar.server.projectanalysis.ws;
 
+import java.util.stream.Stream;
+
 import com.google.common.collect.ImmutableSet;
 import java.util.EnumSet;
 import java.util.List;
@@ -50,6 +52,7 @@ import static org.sonar.db.component.SnapshotQuery.SORT_FIELD.BY_DATE;
 import static org.sonar.db.component.SnapshotQuery.SORT_ORDER.DESC;
 import static org.sonar.server.projectanalysis.ws.EventCategory.OTHER;
 import static org.sonar.server.projectanalysis.ws.ProjectAnalysesWsParameters.PARAM_BRANCH;
+import static org.sonar.server.projectanalysis.ws.ProjectAnalysesWsParameters.PARAM_BUILDSTRING;
 import static org.sonar.server.projectanalysis.ws.ProjectAnalysesWsParameters.PARAM_CATEGORY;
 import static org.sonar.server.projectanalysis.ws.ProjectAnalysesWsParameters.PARAM_FROM;
 import static org.sonar.server.projectanalysis.ws.ProjectAnalysesWsParameters.PARAM_PROJECT;
@@ -59,131 +62,143 @@ import static org.sonar.server.ws.KeyExamples.KEY_BRANCH_EXAMPLE_001;
 import static org.sonar.server.ws.WsUtils.writeProtobuf;
 
 public class SearchAction implements ProjectAnalysesWsAction {
-  private static final Set<String> ALLOWED_QUALIFIERS = ImmutableSet.of(Qualifiers.PROJECT, Qualifiers.APP, Qualifiers.VIEW);
 
-  private final DbClient dbClient;
-  private final ComponentFinder componentFinder;
-  private final UserSession userSession;
+    private static final Set<String> ALLOWED_QUALIFIERS = ImmutableSet.of(Qualifiers.PROJECT, Qualifiers.APP, Qualifiers.VIEW);
 
-  public SearchAction(DbClient dbClient, ComponentFinder componentFinder, UserSession userSession) {
-    this.dbClient = dbClient;
-    this.componentFinder = componentFinder;
-    this.userSession = userSession;
-  }
+    private final DbClient dbClient;
+    private final ComponentFinder componentFinder;
+    private final UserSession userSession;
 
-  @Override
-  public void define(WebService.NewController context) {
-    WebService.NewAction action = context.createAction("search")
-      .setDescription("Search a project analyses and attached events.<br>" +
-        "Requires the following permission: 'Browse' on the specified project")
-      .setSince("6.3")
-      .setResponseExample(getClass().getResource("search-example.json"))
-      .setChangelog(
-        new Change("7.5", "Add QualityGate information on Applications")
-      )
-      .setHandler(this);
-
-    action.addPagingParams(DEFAULT_PAGE_SIZE, 500);
-
-    action.createParam(PARAM_PROJECT)
-      .setDescription("Project key")
-      .setRequired(true)
-      .setExampleValue(KeyExamples.KEY_PROJECT_EXAMPLE_001);
-
-    action.createParam(PARAM_BRANCH)
-      .setDescription("Key of a branch")
-      .setSince("6.6")
-      .setInternal(true)
-      .setExampleValue(KEY_BRANCH_EXAMPLE_001);
-
-    action.createParam(PARAM_CATEGORY)
-      .setDescription("Event category. Filter analyses that have at least one event of the category specified.")
-      .setPossibleValues(EnumSet.allOf(EventCategory.class))
-      .setExampleValue(OTHER.name());
-
-    action.createParam(PARAM_FROM)
-      .setDescription("Filter analyses created after the given date (inclusive). <br>" +
-        "Either a date (server timezone) or datetime can be provided")
-      .setExampleValue("2013-05-01")
-      .setSince("6.5");
-
-    action.createParam(PARAM_TO)
-      .setDescription("Filter analyses created before the given date (inclusive). <br>" +
-        "Either a date (server timezone) or datetime can be provided")
-      .setExampleValue("2017-10-19 or 2017-10-19T13:00:00+0200")
-      .setSince("6.5");
-  }
-
-  @Override
-  public void handle(Request request, Response response) throws Exception {
-    SearchData searchData = load(toWsRequest(request));
-    ProjectAnalyses.SearchResponse searchResponse = new SearchResponseBuilder(searchData).build();
-    writeProtobuf(searchResponse, request, response);
-  }
-
-  private static SearchRequest toWsRequest(Request request) {
-    String category = request.param(PARAM_CATEGORY);
-    return SearchRequest.builder()
-      .setProject(request.mandatoryParam(PARAM_PROJECT))
-      .setBranch(request.param(PARAM_BRANCH))
-      .setCategory(category == null ? null : EventCategory.valueOf(category))
-      .setPage(request.mandatoryParamAsInt(Param.PAGE))
-      .setPageSize(request.mandatoryParamAsInt(Param.PAGE_SIZE))
-      .setFrom(request.param(PARAM_FROM))
-      .setTo(request.param(PARAM_TO))
-      .build();
-  }
-
-  private SearchData load(SearchRequest request) {
-    try (DbSession dbSession = dbClient.openSession(false)) {
-      SearchData.Builder searchResults = SearchData.builder(dbSession, request);
-      addProject(searchResults);
-      checkPermission(searchResults.getProject());
-      addManualBaseline(searchResults);
-      addAnalyses(searchResults);
-      addEvents(searchResults);
-      return searchResults.build();
+    public SearchAction(DbClient dbClient, ComponentFinder componentFinder, UserSession userSession) {
+        this.dbClient = dbClient;
+        this.componentFinder = componentFinder;
+        this.userSession = userSession;
     }
-  }
 
-  private void addManualBaseline(SearchData.Builder data) {
-    dbClient.branchDao().selectByUuid(data.getDbSession(), data.getProject().uuid())
-      .ifPresent(branchDto -> dbClient.newCodePeriodDao().selectByBranch(
-        data.getDbSession(), branchDto.getProjectUuid(), branchDto.getUuid())
-        .ifPresent(newCodePeriodDto -> data.setManualBaseline(newCodePeriodDto.getValue())));
-  }
+    @Override
+    public void define(WebService.NewController context) {
+        WebService.NewAction action = context.createAction("search")
+            .setDescription("Search a project analyses and attached events.<br>" +
+                            "Requires the following permission: 'Browse' on the specified project")
+            .setSince("6.3")
+            .setResponseExample(getClass().getResource("search-example.json"))
+            .setChangelog(
+                new Change("7.5", "Add QualityGate information on Applications")
+            )
+            .setHandler(this);
 
-  private void addAnalyses(SearchData.Builder data) {
-    SnapshotQuery dbQuery = new SnapshotQuery()
-      .setComponentUuid(data.getProject().uuid())
-      .setStatus(SnapshotDto.STATUS_PROCESSED)
-      .setSort(BY_DATE, DESC);
-    ofNullable(data.getRequest().getFrom()).ifPresent(from -> dbQuery.setCreatedAfter(parseStartingDateOrDateTime(from).getTime()));
-    ofNullable(data.getRequest().getTo()).ifPresent(to -> dbQuery.setCreatedBefore(parseEndingDateOrDateTime(to).getTime() + 1_000L));
-    data.setAnalyses(dbClient.snapshotDao().selectAnalysesByQuery(data.getDbSession(), dbQuery));
-  }
+        action.addPagingParams(DEFAULT_PAGE_SIZE, 500);
 
-  private void addEvents(SearchData.Builder data) {
-    List<String> analyses = data.getAnalyses().stream().map(SnapshotDto::getUuid).collect(toList());
-    data.setEvents(dbClient.eventDao().selectByAnalysisUuids(data.getDbSession(), analyses));
-    data.setComponentChanges(dbClient.eventComponentChangeDao().selectByAnalysisUuids(data.getDbSession(), analyses));
-  }
+        action.createParam(PARAM_PROJECT)
+            .setDescription("Project key")
+            .setRequired(true)
+            .setExampleValue(KeyExamples.KEY_PROJECT_EXAMPLE_001);
 
-  private void checkPermission(ComponentDto project) {
-    userSession.checkComponentPermission(UserRole.USER, project);
-  }
+        action.createParam(PARAM_BRANCH)
+            .setDescription("Key of a branch")
+            .setSince("6.6")
+            .setInternal(true)
+            .setExampleValue(KEY_BRANCH_EXAMPLE_001);
 
-  private void addProject(SearchData.Builder data) {
-    ComponentDto project = loadComponent(data.getDbSession(), data.getRequest());
-    checkArgument(Scopes.PROJECT.equals(project.scope()) && ALLOWED_QUALIFIERS.contains(project.qualifier()), "A project, portfolio or application is required");
-    data.setProject(project);
-  }
+        action.createParam(PARAM_BUILDSTRING)
+            .setDescription("Scan type for compile tool")
+            .setSince("8.6")
+            .setInternal(true)
+            .setPossibleValues(EnumSet.allOf(ScanType.class));
 
-  private ComponentDto loadComponent(DbSession dbSession, SearchRequest request) {
-    String project = request.getProject();
-    String branch = request.getBranch();
-    String pullRequest = request.getPullRequest();
-    return componentFinder.getByKeyAndOptionalBranchOrPullRequest(dbSession, project, branch, pullRequest);
-  }
+        action.createParam(PARAM_CATEGORY)
+            .setDescription("Event category. Filter analyses that have at least one event of the category specified.")
+            .setPossibleValues(EnumSet.allOf(EventCategory.class))
+            .setExampleValue(OTHER.name());
+
+        action.createParam(PARAM_FROM)
+            .setDescription("Filter analyses created after the given date (inclusive). <br>" +
+                            "Either a date (server timezone) or datetime can be provided")
+            .setExampleValue("2013-05-01")
+            .setSince("6.5");
+
+        action.createParam(PARAM_TO)
+            .setDescription("Filter analyses created before the given date (inclusive). <br>" +
+                            "Either a date (server timezone) or datetime can be provided")
+            .setExampleValue("2017-10-19 or 2017-10-19T13:00:00+0200")
+            .setSince("6.5");
+    }
+
+    @Override
+    public void handle(Request request, Response response) throws Exception {
+        SearchData searchData = load(toWsRequest(request));
+        ProjectAnalyses.SearchResponse searchResponse = new SearchResponseBuilder(searchData).build();
+        writeProtobuf(searchResponse, request, response);
+    }
+
+    private static SearchRequest toWsRequest(Request request) {
+        String category = request.param(PARAM_CATEGORY);
+        return SearchRequest.builder()
+            .setProject(request.mandatoryParam(PARAM_PROJECT))
+            .setBranch(request.param(PARAM_BRANCH))
+            .setBuildString(request.param(PARAM_BUILDSTRING))
+            .setCategory(category == null ? null : EventCategory.valueOf(category))
+            .setPage(request.mandatoryParamAsInt(Param.PAGE))
+            .setPageSize(request.mandatoryParamAsInt(Param.PAGE_SIZE))
+            .setFrom(request.param(PARAM_FROM))
+            .setTo(request.param(PARAM_TO))
+            .build();
+    }
+
+    private SearchData load(SearchRequest request) {
+        try (DbSession dbSession = dbClient.openSession(false)) {
+            SearchData.Builder searchResults = SearchData.builder(dbSession, request);
+            addProject(searchResults);
+            checkPermission(searchResults.getProject());
+            addManualBaseline(searchResults);
+            addAnalyses(searchResults);
+            addEvents(searchResults);
+            return searchResults.build();
+        }
+    }
+
+    private void addManualBaseline(SearchData.Builder data) {
+        dbClient.branchDao().selectByUuid(data.getDbSession(), data.getProject().uuid())
+            .ifPresent(branchDto -> dbClient.newCodePeriodDao().selectByBranch(
+                           data.getDbSession(), branchDto.getProjectUuid(), branchDto.getUuid())
+                       .ifPresent(newCodePeriodDto -> data.setManualBaseline(newCodePeriodDto.getValue())));
+    }
+
+    private void addAnalyses(SearchData.Builder data) {
+        SnapshotQuery dbQuery = new SnapshotQuery()
+            .setComponentUuid(data.getProject().uuid())
+            .setStatus(SnapshotDto.STATUS_PROCESSED)
+            .setBuildString(data.getRequest().getBuildString())
+            .setSort(BY_DATE, DESC);
+        ofNullable(data.getRequest().getFrom())
+            .ifPresent(from -> dbQuery.setCreatedAfter(parseStartingDateOrDateTime(from).getTime()));
+        ofNullable(data.getRequest().getTo())
+            .ifPresent(to -> dbQuery.setCreatedBefore(parseEndingDateOrDateTime(to).getTime() + 1_000L));
+        data.setAnalyses(dbClient.snapshotDao().selectAnalysesByQuery(data.getDbSession(), dbQuery));
+    }
+
+    private void addEvents(SearchData.Builder data) {
+        List<String> analyses = data.getAnalyses().stream().map(SnapshotDto::getUuid).collect(toList());
+        data.setEvents(dbClient.eventDao().selectByAnalysisUuids(data.getDbSession(), analyses));
+        data.setComponentChanges(dbClient.eventComponentChangeDao().selectByAnalysisUuids(data.getDbSession(), analyses));
+    }
+
+    private void checkPermission(ComponentDto project) {
+        userSession.checkComponentPermission(UserRole.USER, project);
+    }
+
+    private void addProject(SearchData.Builder data) {
+        ComponentDto project = loadComponent(data.getDbSession(), data.getRequest());
+        checkArgument(Scopes.PROJECT.equals(project.scope()) && ALLOWED_QUALIFIERS.contains(project.qualifier()), "A project, portfolio or application is required");
+        data.setProject(project);
+    }
+
+    private ComponentDto loadComponent(DbSession dbSession, SearchRequest request) {
+        String project = request.getProject();
+        String branch = request.getBranch();
+        String pullRequest = request.getPullRequest();
+        // 这函数名也太离谱了 ???
+        return componentFinder.getByKeyAndOptionalBranchOrPullRequest(dbSession, project, branch, pullRequest);
+    }
 
 }

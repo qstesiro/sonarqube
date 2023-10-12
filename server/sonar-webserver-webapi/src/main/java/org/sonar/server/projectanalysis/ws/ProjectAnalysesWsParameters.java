@@ -20,17 +20,19 @@
 package org.sonar.server.projectanalysis.ws;
 
 public class ProjectAnalysesWsParameters {
-  public static final String PARAM_ANALYSIS = "analysis";
-  public static final String PARAM_CATEGORY = "category";
-  public static final String PARAM_NAME = "name";
-  public static final String PARAM_EVENT = "event";
-  public static final String PARAM_PROJECT = "project";
-  public static final String PARAM_FROM = "from";
-  public static final String PARAM_TO = "to";
-  public static final String PARAM_BRANCH = "branch";
-  public static final String PARAM_PULL_REQUEST = "pullRequest";
 
-  private ProjectAnalysesWsParameters() {
-    // static access only
-  }
+    public static final String PARAM_ANALYSIS = "analysis";
+    public static final String PARAM_CATEGORY = "category";
+    public static final String PARAM_NAME = "name";
+    public static final String PARAM_EVENT = "event";
+    public static final String PARAM_PROJECT = "project";
+    public static final String PARAM_FROM = "from";
+    public static final String PARAM_TO = "to";
+    public static final String PARAM_BRANCH = "branch";
+    public static final String PARAM_BUILDSTRING = "buildString";
+    public static final String PARAM_PULL_REQUEST = "pullRequest";
+
+    private ProjectAnalysesWsParameters() {
+        // static access only
+    }
 }

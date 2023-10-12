@@ -19,6 +19,8 @@
  */
 package org.sonarqube.ws.client.projectanalyses;
 
+import java.util.stream.Stream;
+
 import javax.annotation.Generated;
 import javax.annotation.Nullable;
 import org.sonarqube.ws.MediaTypes;
@@ -39,105 +41,110 @@ import static java.util.Optional.ofNullable;
 @Generated("sonar-ws-generator")
 public class ProjectAnalysesService extends BaseService {
 
-  public ProjectAnalysesService(WsConnector wsConnector) {
-    super(wsConnector, "api/project_analyses");
-  }
+    public ProjectAnalysesService(WsConnector wsConnector) {
+        super(wsConnector, "api/project_analyses");
+    }
 
-  /**
-   *
-   * This is part of the internal API.
-   * This is a POST request.
-   * @see <a href="https://next.sonarqube.com/sonarqube/web_api/api/project_analyses/create_event">Further information about this action online (including a response example)</a>
-   * @since 6.3
-   */
-  public CreateEventResponse createEvent(CreateEventRequest request) {
-    return call(
-      new PostRequest(path("create_event"))
-        .setParam("analysis", request.getAnalysis())
-        .setParam("category", request.getCategory())
-        .setParam("name", request.getName()),
-      CreateEventResponse.parser());
-  }
+    /**
+     *
+     * This is part of the internal API.
+     * This is a POST request.
+     * @see <a href="https://next.sonarqube.com/sonarqube/web_api/api/project_analyses/create_event">Further information about this action online (including a response example)</a>
+     * @since 6.3
+     */
+    public CreateEventResponse createEvent(CreateEventRequest request) {
+        return call(
+            new PostRequest(path("create_event"))
+            .setParam("analysis", request.getAnalysis())
+            .setParam("category", request.getCategory())
+            .setParam("name", request.getName()),
+            CreateEventResponse.parser());
+    }
 
-  /**
-   *
-   * This is part of the internal API.
-   * This is a POST request.
-   * @see <a href="https://next.sonarqube.com/sonarqube/web_api/api/project_analyses/delete">Further information about this action online (including a response example)</a>
-   * @since 6.3
-   */
-  public void delete(DeleteRequest request) {
-    call(
-      new PostRequest(path("delete"))
-        .setParam("analysis", request.getAnalysis())
-        .setMediaType(MediaTypes.JSON)).content();
-  }
+    /**
+     *
+     * This is part of the internal API.
+     * This is a POST request.
+     * @see <a href="https://next.sonarqube.com/sonarqube/web_api/api/project_analyses/delete">Further information about this action online (including a response example)</a>
+     * @since 6.3
+     */
+    public void delete(DeleteRequest request) {
+        call(
+            new PostRequest(path("delete"))
+            .setParam("analysis", request.getAnalysis())
+            .setMediaType(MediaTypes.JSON)).content();
+    }
 
-  /**
-   *
-   * This is part of the internal API.
-   * This is a POST request.
-   * @see <a href="https://next.sonarqube.com/sonarqube/web_api/api/project_analyses/delete_event">Further information about this action online (including a response example)</a>
-   * @since 6.3
-   */
-  public void deleteEvent(DeleteEventRequest request) {
-    call(
-      new PostRequest(path("delete_event"))
-        .setParam("event", request.getEvent())
-        .setMediaType(MediaTypes.JSON)).content();
-  }
+    /**
+     *
+     * This is part of the internal API.
+     * This is a POST request.
+     * @see <a href="https://next.sonarqube.com/sonarqube/web_api/api/project_analyses/delete_event">Further information about this action online (including a response example)</a>
+     * @since 6.3
+     */
+    public void deleteEvent(DeleteEventRequest request) {
+        call(
+            new PostRequest(path("delete_event"))
+            .setParam("event", request.getEvent())
+            .setMediaType(MediaTypes.JSON)).content();
+    }
 
-  /**
-   *
-   * This is part of the internal API.
-   * This is a GET request.
-   * @see <a href="https://next.sonarqube.com/sonarqube/web_api/api/project_analyses/search">Further information about this action online (including a response example)</a>
-   * @since 6.3
-   */
-  public SearchResponse search(SearchRequest request) {
-    return call(
-      new GetRequest(path("search"))
-        .setParam("branch", request.getBranch())
-        .setParam("category", request.getCategory())
-        .setParam("from", request.getFrom())
-        .setParam("p", request.getP())
-        .setParam("project", request.getProject())
-        .setParam("ps", request.getPs())
-        .setParam("pullRequest", request.getPullRequest())
-        .setParam("to", request.getTo()),
-      SearchResponse.parser());
-  }
+    /**
+     *
+     * This is part of the internal API.
+     * This is a GET request.
+     * @see <a href="https://next.sonarqube.com/sonarqube/web_api/api/project_analyses/search">Further information about this action online (including a response example)</a>
+     * @since 6.3
+     */
+    public SearchResponse search(SearchRequest request) {
+        System.out.printf("--- %s\n", request.getClass());
+        Stream.of(Thread.currentThread().getStackTrace())
+            .forEach(e -> System.out.printf("--- %s", e));
+        return call(
+            new GetRequest(path("search"))
+            .setParam("branch", request.getBranch())
+            .setParam("buildString", request.getBuildString())
+            .setParam("category", request.getCategory())
+            .setParam("from", request.getFrom())
+            .setParam("p", request.getP())
+            .setParam("project", request.getProject())
+            .setParam("ps", request.getPs())
+            .setParam("pullRequest", request.getPullRequest())
+            .setParam("to", request.getTo()),
+            SearchResponse.parser()
+        );
+    }
 
-  /**
-   *
-   * This is part of the internal API.
-   * This is a POST request.
-   * @see <a href="https://next.sonarqube.com/sonarqube/web_api/api/project_analyses/update_event">Further information about this action online (including a response example)</a>
-   * @since 6.3
-   */
-  public UpdateEventResponse updateEvent(UpdateEventRequest request) {
-    return call(
-      new PostRequest(path("update_event"))
-        .setParam("event", request.getEvent())
-        .setParam("name", request.getName()),
-      UpdateEventResponse.parser());
-  }
+    /**
+     *
+     * This is part of the internal API.
+     * This is a POST request.
+     * @see <a href="https://next.sonarqube.com/sonarqube/web_api/api/project_analyses/update_event">Further information about this action online (including a response example)</a>
+     * @since 6.3
+     */
+    public UpdateEventResponse updateEvent(UpdateEventRequest request) {
+        return call(
+            new PostRequest(path("update_event"))
+            .setParam("event", request.getEvent())
+            .setParam("name", request.getName()),
+            UpdateEventResponse.parser());
+    }
 
-  public void set_baseline(String projectKey, @Nullable String branchName, String analysisUuid) {
-    requireNonNull(projectKey, "projectKey can't be null");
-    requireNonNull(analysisUuid, "analysisUuid can't be null");
-    PostRequest request = new PostRequest(path("set_baseline"))
-      .setParam("project", projectKey)
-      .setParam("analysis", analysisUuid);
-    ofNullable(branchName).ifPresent(t -> request.setParam("branch", t));
-    call(request);
-  }
+    public void set_baseline(String projectKey, @Nullable String branchName, String analysisUuid) {
+        requireNonNull(projectKey, "projectKey can't be null");
+        requireNonNull(analysisUuid, "analysisUuid can't be null");
+        PostRequest request = new PostRequest(path("set_baseline"))
+            .setParam("project", projectKey)
+            .setParam("analysis", analysisUuid);
+        ofNullable(branchName).ifPresent(t -> request.setParam("branch", t));
+        call(request);
+    }
 
-  public void unset_baseline(String projectKey, @Nullable String branchName) {
-    requireNonNull(projectKey, "projectKey can't be null");
-    PostRequest request = new PostRequest(path("unset_baseline"))
-      .setParam("project", projectKey);
-    ofNullable(branchName).ifPresent(t -> request.setParam("branch", t));
-    call(request);
-  }
+    public void unset_baseline(String projectKey, @Nullable String branchName) {
+        requireNonNull(projectKey, "projectKey can't be null");
+        PostRequest request = new PostRequest(path("unset_baseline"))
+            .setParam("project", projectKey);
+        ofNullable(branchName).ifPresent(t -> request.setParam("branch", t));
+        call(request);
+    }
 }

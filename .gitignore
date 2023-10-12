@@ -47,7 +47,7 @@ yarn-error.log*
 
 # ---- Windows
 # Windows image file caches
-Thumbs.db 
+Thumbs.db
 # Folder config file
 Desktop.ini
 
@@ -69,3 +69,4 @@ scripts/patches/*license*.txt
 !scripts/patches/debug_web.sh
 !scripts/patches/postgres.sh
 gherkin-features/
+**/*.ts

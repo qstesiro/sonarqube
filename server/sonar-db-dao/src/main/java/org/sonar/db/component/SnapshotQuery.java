@@ -24,112 +24,123 @@ import javax.annotation.Nullable;
 
 public final class SnapshotQuery {
 
-  public enum SORT_FIELD {
-    BY_DATE("created_at");
-    final String fieldName;
+    public enum SORT_FIELD {
+        BY_DATE("created_at");
+        final String fieldName;
 
-    SORT_FIELD(String fieldName) {
-      this.fieldName = fieldName;
+        SORT_FIELD(String fieldName) {
+            this.fieldName = fieldName;
+        }
     }
-  }
 
-  public enum SORT_ORDER {
-    ASC("asc"), DESC("desc");
-    final String order;
+    public enum SORT_ORDER {
+        ASC("asc"), DESC("desc");
+        final String order;
 
-    SORT_ORDER(String order) {
-      this.order = order;
+        SORT_ORDER(String order) {
+            this.order = order;
+        }
     }
-  }
 
-  private String componentUuid;
-  private Long createdAfter;
-  private Long createdBefore;
-  private String status;
-  private String projectVersion;
-  private Boolean isLast;
-  private String sortField;
-  private String sortOrder;
+    private String componentUuid;
+    private Long createdAfter;
+    private Long createdBefore;
+    private String status;
+    private String buildString;
+    private String projectVersion;
+    private Boolean isLast;
+    private String sortField;
+    private String sortOrder;
 
-  /**
-   * filter to return snapshots created at or after a given date
-   */
-  @CheckForNull
-  public Long getCreatedAfter() {
-    return createdAfter;
-  }
+    /**
+     * filter to return snapshots created at or after a given date
+     */
+    @CheckForNull
+    public Long getCreatedAfter() {
+        return createdAfter;
+    }
 
-  public SnapshotQuery setCreatedAfter(@Nullable Long createdAfter) {
-    this.createdAfter = createdAfter;
-    return this;
-  }
+    public SnapshotQuery setCreatedAfter(@Nullable Long createdAfter) {
+        this.createdAfter = createdAfter;
+        return this;
+    }
 
-  /**
-   * filter to return snapshots created before a given date
-   */
-  @CheckForNull
-  public Long getCreatedBefore() {
-    return createdBefore;
-  }
+    /**
+     * filter to return snapshots created before a given date
+     */
+    @CheckForNull
+    public Long getCreatedBefore() {
+        return createdBefore;
+    }
 
-  public SnapshotQuery setCreatedBefore(@Nullable Long createdBefore) {
-    this.createdBefore = createdBefore;
-    return this;
-  }
+    public SnapshotQuery setCreatedBefore(@Nullable Long createdBefore) {
+        this.createdBefore = createdBefore;
+        return this;
+    }
 
-  @CheckForNull
-  public Boolean getIsLast() {
-    return isLast;
-  }
+    @CheckForNull
+    public Boolean getIsLast() {
+        return isLast;
+    }
 
-  public SnapshotQuery setIsLast(@Nullable Boolean isLast) {
-    this.isLast = isLast;
-    return this;
-  }
+    public SnapshotQuery setIsLast(@Nullable Boolean isLast) {
+        this.isLast = isLast;
+        return this;
+    }
 
-  @CheckForNull
-  public String getComponentUuid() {
-    return componentUuid;
-  }
+    @CheckForNull
+    public String getComponentUuid() {
+        return componentUuid;
+    }
 
-  public SnapshotQuery setComponentUuid(@Nullable String componentUuid) {
-    this.componentUuid = componentUuid;
-    return this;
-  }
+    public SnapshotQuery setComponentUuid(@Nullable String componentUuid) {
+        this.componentUuid = componentUuid;
+        return this;
+    }
 
-  @CheckForNull
-  public String getStatus() {
-    return status;
-  }
+    @CheckForNull
+    public String getStatus() {
+        return status;
+    }
 
-  public SnapshotQuery setStatus(@Nullable String status) {
-    this.status = status;
-    return this;
-  }
+    public SnapshotQuery setStatus(@Nullable String status) {
+        this.status = status;
+        return this;
+    }
 
-  @CheckForNull
-  public String getProjectVersion() {
-    return projectVersion;
-  }
+    @CheckForNull
+    public String getBuildString() {
+        return buildString;
+    }
 
-  public SnapshotQuery setProjectVersion(@Nullable String projectVersion) {
-    this.projectVersion = projectVersion;
-    return this;
-  }
+    public SnapshotQuery setBuildString(@Nullable String buildString) {
+        this.buildString = buildString;
+        return this;
+    }
 
-  public SnapshotQuery setSort(SORT_FIELD sortField, SORT_ORDER sortOrder) {
-    this.sortField = sortField.fieldName;
-    this.sortOrder = sortOrder.order;
-    return this;
-  }
+    @CheckForNull
+    public String getProjectVersion() {
+        return projectVersion;
+    }
 
-  @CheckForNull
-  public String getSortField() {
-    return sortField;
-  }
+    public SnapshotQuery setProjectVersion(@Nullable String projectVersion) {
+        this.projectVersion = projectVersion;
+        return this;
+    }
 
-  @CheckForNull
-  public String getSortOrder() {
-    return sortOrder;
-  }
+    public SnapshotQuery setSort(SORT_FIELD sortField, SORT_ORDER sortOrder) {
+        this.sortField = sortField.fieldName;
+        this.sortOrder = sortOrder.order;
+        return this;
+    }
+
+    @CheckForNull
+    public String getSortField() {
+        return sortField;
+    }
+
+    @CheckForNull
+    public String getSortOrder() {
+        return sortOrder;
+    }
 }

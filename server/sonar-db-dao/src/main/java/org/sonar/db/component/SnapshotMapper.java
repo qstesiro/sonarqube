@@ -28,30 +28,30 @@ import org.sonar.db.component.SnapshotDao.ComponentUuidFromDatePair;
 
 public interface SnapshotMapper {
 
-  List<SnapshotDto> selectByUuids(@Param("uuids") List<String> uuids);
+    List<SnapshotDto> selectByUuids(@Param("uuids") List<String> uuids);
 
-  void insert(SnapshotDto snapshot);
+    void insert(SnapshotDto snapshot);
 
-  @CheckForNull
-  SnapshotDto selectLastSnapshotByComponentUuid(@Param("componentUuid") String componentUuid);
+    @CheckForNull
+    SnapshotDto selectLastSnapshotByComponentUuid(@Param("componentUuid") String componentUuid);
 
-  @CheckForNull
-  SnapshotDto selectLastSnapshotByRootComponentUuid(@Param("componentUuid") String componentUuid);
+    @CheckForNull
+    SnapshotDto selectLastSnapshotByRootComponentUuid(@Param("componentUuid") String componentUuid);
 
-  List<SnapshotDto> selectLastSnapshotsByRootComponentUuids(@Param("componentUuids") Collection<String> componentIds);
+    List<SnapshotDto> selectLastSnapshotsByRootComponentUuids(@Param("componentUuids") Collection<String> componentIds);
 
-  List<SnapshotDto> selectSnapshotsByQuery(@Param("query") SnapshotQuery query);
+    List<SnapshotDto> selectSnapshotsByQuery(@Param("query") SnapshotQuery query);
 
-  List<SnapshotDto> selectOldestSnapshots(@Param("componentUuid") String componentUuid, RowBounds rowBounds);
+    List<SnapshotDto> selectOldestSnapshots(@Param("componentUuid") String componentUuid, RowBounds rowBounds);
 
-  List<ViewsSnapshotDto> selectSnapshotBefore(@Param("componentUuid") String componentUuid, @Param("date") long date);
+    List<ViewsSnapshotDto> selectSnapshotBefore(@Param("componentUuid") String componentUuid, @Param("date") long date);
 
-  void unsetIsLastFlagForComponentUuid(@Param("componentUuid") String componentUuid);
+    void unsetIsLastFlagForComponentUuid(@Param("componentUuid") String componentUuid);
 
-  void setIsLastFlagForAnalysisUuid(@Param("analysisUuid") String analysisUuid);
+    void setIsLastFlagForAnalysisUuid(@Param("analysisUuid") String analysisUuid);
 
-  void update(SnapshotDto analysis);
+    void update(SnapshotDto analysis);
 
-  List<SnapshotDto> selectFinishedByComponentUuidsAndFromDates(@Param("componentUuidFromDatePairs") List<ComponentUuidFromDatePair> pairs);
+    List<SnapshotDto> selectFinishedByComponentUuidsAndFromDates(@Param("componentUuidFromDatePairs") List<ComponentUuidFromDatePair> pairs);
 
 }
