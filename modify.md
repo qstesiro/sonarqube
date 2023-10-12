@@ -18,5 +18,15 @@
   - sonar-scanner-engine/src/main/java/org/sonar/scanner/bootstrap/PluginInstaller.java
   - sonar-scanner-engine/src/main/java/org/sonar/scanner/bootstrap/ScannerPluginInstaller.java
 
+- 修改接口支持按类型查询扫描
+  - server/sonar-db-dao/src/main/java/org/sonar/db/component/ComponentDto.java
+  - server/sonar-db-dao/src/main/java/org/sonar/db/component/SnapshotQuery.java
+  - server/sonar-webserver-webapi/src/main/java/org/sonar/server/projectanalysis/ws/ScanType.java
+  - server/sonar-webserver-webapi/src/main/java/org/sonar/server/projectanalysis/ws/SearchAction.java
+  - server/sonar-webserver-webapi/src/main/java/org/sonar/server/projectanalysis/ws/SearchData.java
+  - server/sonar-webserver-webapi/src/main/java/org/sonar/server/projectanalysis/ws/SearchRequest.java
+  - server/sonar-webserver-ws/src/main/java/org/sonar/server/ws/WebServiceEngine.java
+  - sonar-ws/src/main/java/org/sonarqube/ws/client/projectanalyses/SearchRequest.java
+
 - 遗留问题
   - 外置es可能存在升级问题,需要进一步调研
